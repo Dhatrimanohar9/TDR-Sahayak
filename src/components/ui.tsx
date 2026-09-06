@@ -83,21 +83,21 @@ export function Badge({
   );
 }
 
-/** Three-step progress indicator used across the flow (Step N of 3). */
-export function StepProgress({ step }: { step: 1 | 2 | 3 }) {
-  const labels = ["Describe", "Clarify", "Decide"];
+/** Four-stage progress indicator used across the citizen flow. */
+export function StepProgress({ step }: { step: 1 | 2 | 3 | 4 }) {
+  const labels = ["Describe", "Check", "Correct", "Next Step"];
   return (
-    <div className="flex items-center gap-2" aria-label={`Step ${step} of 3`}>
+    <div className="flex items-center gap-1.5" aria-label={`Stage ${step} of 4`}>
       {labels.map((label, i) => {
-        const n = (i + 1) as 1 | 2 | 3;
+        const n = (i + 1) as 1 | 2 | 3 | 4;
         const done = n < step;
         const active = n === step;
         return (
-          <div key={label} className="flex flex-1 items-center gap-2">
-            <div className="flex items-center gap-1.5">
+          <div key={label} className="flex flex-1 items-center gap-1">
+            <div className="flex items-center gap-1">
               <span
                 aria-hidden
-                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${
+                className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold ${
                   active
                     ? "bg-rail-900 text-white"
                     : done
@@ -108,14 +108,14 @@ export function StepProgress({ step }: { step: 1 | 2 | 3 }) {
                 {done ? "✓" : n}
               </span>
               <span
-                className={`hidden text-xs font-semibold sm:block ${
-                  active ? "text-rail-900" : "text-stone-500"
+                className={`hidden text-[11px] font-bold sm:block ${
+                  active ? "text-rail-950" : "text-stone-500"
                 }`}
               >
                 {label}
               </span>
             </div>
-            {n < 3 && (
+            {n < 4 && (
               <div
                 aria-hidden
                 className={`h-1 flex-1 rounded-full ${done ? "bg-rail-600" : "bg-rail-100"}`}
@@ -124,7 +124,7 @@ export function StepProgress({ step }: { step: 1 | 2 | 3 }) {
           </div>
         );
       })}
-      <span className="sr-only">Step {step} of 3</span>
+      <span className="sr-only">Stage {step} of 4</span>
     </div>
   );
 }

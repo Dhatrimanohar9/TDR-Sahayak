@@ -87,7 +87,10 @@ export function Understanding({
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);
   const [lastChange, setLastChange] = useState<{
+    factKey: string;
     factName: string;
+    beforeTravelled: string;
+    beforeCompleted: string;
     beforeScenarioCode: string;
     beforeScenarioTitle: string;
     beforeAction: string;
@@ -108,7 +111,10 @@ export function Understanding({
       journeyDate: "Scheduled Journey Date",
     };
     setLastChange({
+      factKey: key,
       factName: factNameMap[key] || key,
+      beforeTravelled: facts.passengerTravelled === true ? "Yes" : facts.passengerTravelled === false ? "No" : "Unconfirmed",
+      beforeCompleted: facts.passengerTravelled === false ? "Not applicable" : facts.journeyCompleted === true ? "Yes" : facts.journeyCompleted === false ? "No" : "Unconfirmed",
       beforeScenarioCode: currentDec.scenario,
       beforeScenarioTitle: currentDec.scenarioTitle,
       beforeAction: currentDec.recommendedAction,
@@ -128,19 +134,19 @@ export function Understanding({
         onBack={onBack}
         right={<ConfidenceMeter confidence={analysis.confidence} />}
       />
-      <StepProgress step={2} />
+      <StepProgress step={showCorrection || lastChange !== null ? 3 : 2} />
 
       {/* Before vs After Compact Rule Comparison Card */}
       {lastChange && (
-        <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-4 shadow-sm animate-fade-up">
+        <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50/95 p-4 shadow-md animate-fade-up">
           <div className="flex items-center justify-between border-b border-amber-200/80 pb-2 mb-3">
             <div className="flex items-center gap-2">
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-600"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-700"></span>
               </span>
               <span className="text-xs font-black uppercase tracking-wider text-amber-950">
-                Fact Updated: {lastChange.factName}
+                Correction Applied: {lastChange.factName}
               </span>
             </div>
             <button
@@ -151,37 +157,42 @@ export function Understanding({
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            {/* Before */}
-            <div className="rounded-xl border border-stone-200 bg-white/80 p-3 text-xs">
-              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wide block mb-1">
-                Before Correction
-              </span>
-              <p className="font-bold text-stone-800">
-                Scenario {lastChange.beforeScenarioCode} · {lastChange.beforeScenarioTitle}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* BEFORE CORRECTION */}
+            <div className="rounded-xl border border-stone-200 bg-white p-3 text-xs shadow-2xs">
+              <p className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1">
+                BEFORE CORRECTION
               </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-stone-600 italic">
-                “{lastChange.beforeAction}”
-              </p>
+              <div className="space-y-0.5 text-stone-700">
+                <p>• Travelled: <strong className="text-stone-900">{lastChange.beforeTravelled}</strong></p>
+                <p>• Journey completed: <strong className="text-stone-900">{lastChange.beforeCompleted}</strong></p>
+                <p className="mt-1 font-semibold text-rail-900">
+                  Recommendation: Scenario {lastChange.beforeScenarioCode} ({lastChange.beforeScenarioTitle})
+                </p>
+              </div>
             </div>
 
-            {/* After */}
-            <div className="rounded-xl border border-rail-800 bg-rail-900 text-white p-3 text-xs shadow-xs">
-              <span className="text-[10px] font-bold text-amber-signal uppercase tracking-wide block mb-1">
-                After Correction (Active Rule)
-              </span>
-              <p className="font-bold text-white">
-                Scenario {currentDec.scenario} · {currentDec.scenarioTitle}
+            {/* AFTER CORRECTION */}
+            <div className="rounded-xl border border-rail-800 bg-rail-900 text-white p-3 text-xs shadow-2xs">
+              <p className="text-[10px] font-bold text-amber-signal uppercase tracking-wide mb-1">
+                AFTER CORRECTION
               </p>
-              <p className="mt-1 text-[11px] leading-relaxed text-rail-100/90 italic">
-                “{currentDec.recommendedAction}”
-              </p>
+              <div className="space-y-0.5 text-rail-100">
+                <p>• Travelled: <strong className="text-white">{facts.passengerTravelled === true ? "Yes" : facts.passengerTravelled === false ? "No" : "Unconfirmed"}</strong></p>
+                <p>• Journey completed: <strong className="text-white">{facts.passengerTravelled === false ? "Not applicable" : facts.journeyCompleted === true ? "Yes" : facts.journeyCompleted === false ? "No" : "Unconfirmed"}</strong></p>
+                <p className="mt-1 font-bold text-amber-signal">
+                  Recommendation: Scenario {currentDec.scenario} ({currentDec.scenarioTitle})
+                </p>
+              </div>
             </div>
           </div>
 
-          <p className="mt-3 text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
-            <span>⚖️</span> Because this fact changed, a different rule now applies.
-          </p>
+          <div className="mt-3 rounded-lg bg-amber-100/80 px-3 py-2 text-xs font-extrabold text-amber-950 flex items-center gap-1.5 border border-amber-200">
+            <span>⚖️</span>
+            <span>
+              The recommendation changed because you corrected {lastChange.factKey === "passengerTravelled" ? "whether you travelled" : `your ${lastChange.factName.toLowerCase()}`}.
+            </span>
+          </div>
         </div>
       )}
 

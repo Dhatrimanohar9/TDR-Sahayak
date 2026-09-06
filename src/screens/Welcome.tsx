@@ -43,26 +43,36 @@ export function Welcome({
             TDR Sahayak
           </h1>
           <p className="mt-2 text-lg font-bold leading-snug text-amber-signal">
-            Tell us what happened. We’ll help you understand what to do next.
+            Turn your railway disruption story into a clear next step.
           </p>
           <p className="mt-3 text-xs leading-relaxed text-rail-100/90 sm:text-sm">
-            <strong className="text-white font-semibold">AI does not make the refund decision.</strong> It first makes sure we understood your story correctly. The final recommendation is produced by explicit deterministic rules.
+            Describe what happened, check what we understood, correct anything that is wrong, and see why a particular next step was recommended.
           </p>
+
+          {/* Distinctiveness Principle Box */}
+          <div className="mt-4 rounded-2xl bg-white/10 p-3.5 border border-white/15 backdrop-blur-sm text-xs">
+            <div className="flex items-center gap-2 font-black text-amber-signal tracking-wide uppercase text-[11px] mb-1">
+              <span>⚡ AI interprets · Passenger corrects · Rules decide</span>
+            </div>
+            <p className="text-rail-100 leading-relaxed text-[11px]">
+              A wrong interpretation can lead to a wrong next step. TDR Sahayak lets the passenger correct important facts before acting.
+            </p>
+          </div>
 
           {/* Quick Demo Hero Shortcut */}
           {onRunDemo && (
-            <div className="mt-5 rounded-2xl bg-white/10 p-3.5 border border-white/15 backdrop-blur-sm">
-              <div className="flex items-center justify-between text-xs mb-2">
+            <div className="mt-4 rounded-2xl bg-amber-signal/15 p-3 border border-amber-signal/30 backdrop-blur-sm">
+              <div className="flex items-center justify-between text-xs mb-1.5">
                 <span className="font-bold text-amber-signal uppercase tracking-wider text-[10px]">
-                  ⚡ Recommended Hackathon Demo
+                  ⚡ Recommended Demo Shortcut
                 </span>
-                <span className="text-[11px] text-rail-100">Scenario C · Partial Journey</span>
+                <span className="text-[10px] text-rail-100">Scenario C · Partial Journey</span>
               </div>
               <button
                 onClick={() => onRunDemo("partial-journey")}
-                className="w-full flex items-center justify-between rounded-xl bg-amber-signal px-3.5 py-2.5 text-left text-xs font-extrabold text-rail-950 shadow-md transition-all hover:bg-amber-400 active:scale-[0.99]"
+                className="w-full flex items-center justify-between rounded-xl bg-amber-signal px-3.5 py-2 text-left text-xs font-extrabold text-rail-950 shadow-md transition-all hover:bg-amber-400 active:scale-[0.99]"
               >
-                <span>Try Demo: "Boarded train in Hyderabad, journey disrupted midway at Vijayawada"</span>
+                <span>Try the partial-journey example (Hyderabad → Vijayawada)</span>
                 <span aria-hidden className="text-sm font-bold ml-2 shrink-0">→</span>
               </button>
             </div>
@@ -72,7 +82,7 @@ export function Welcome({
 
       <div className="mt-6 space-y-4">
         <Button onClick={onStart} className="w-full text-base py-3.5 font-extrabold shadow-md">
-          Start Refund Inquiry
+          Start My Journey Inquiry
         </Button>
 
         {caseCount > 0 && (
