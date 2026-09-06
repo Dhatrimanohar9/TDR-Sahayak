@@ -3,9 +3,11 @@ import { Badge } from "../components/ui";
 export function AboutSheet({
   onClose,
   onOpenInsights,
+  onOpenAdmin,
 }: {
   onClose: () => void;
   onOpenInsights?: () => void;
+  onOpenAdmin?: () => void;
 }) {
   return (
     <div
@@ -72,20 +74,36 @@ export function AboutSheet({
             track.
           </p>
 
-          {onOpenInsights && (
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onOpenInsights();
-                }}
-                className="text-xs font-semibold text-rail-700 underline hover:text-rail-900"
-              >
-                View illustrative demo analytics (Prototype Insights) →
-              </button>
-            </div>
-          )}
+          <div className="space-y-1.5 pt-1">
+            {onOpenAdmin && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenAdmin();
+                  }}
+                  className="text-xs font-semibold text-rail-700 underline hover:text-rail-900"
+                >
+                  View simulated admin dashboard (Admin View) →
+                </button>
+              </div>
+            )}
+            {onOpenInsights && (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onOpenInsights();
+                  }}
+                  className="text-xs font-semibold text-rail-700 underline hover:text-rail-900"
+                >
+                  View illustrative demo analytics (Prototype Insights) →
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <button

@@ -4,12 +4,14 @@ export function Welcome({
   onStart,
   onAbout,
   onInsights,
+  onAdmin,
   caseCount,
   onTrack,
 }: {
   onStart: () => void;
   onAbout: () => void;
   onInsights: () => void;
+  onAdmin?: () => void;
   caseCount: number;
   onTrack: () => void;
 }) {
@@ -122,6 +124,14 @@ export function Welcome({
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Badge tone="amber">Prototype · No sign-in needed</Badge>
           <div className="flex items-center gap-1.5">
+            {onAdmin && (
+              <button
+                onClick={onAdmin}
+                className="rounded-lg px-2 py-1.5 text-xs font-semibold text-stone-500 hover:text-rail-900 hover:bg-rail-100/60 transition-colors"
+              >
+                Admin View
+              </button>
+            )}
             <button
               onClick={onInsights}
               className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-stone-500 hover:text-rail-900 hover:bg-rail-100/60 transition-colors"

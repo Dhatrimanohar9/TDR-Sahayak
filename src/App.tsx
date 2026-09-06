@@ -16,6 +16,7 @@ import { SubmissionSuccess } from "./screens/SubmissionSuccess";
 import { CaseTracker } from "./screens/CaseTracker";
 import { AboutSheet } from "./screens/AboutSheet";
 import { PrototypeInsights } from "./screens/PrototypeInsights";
+import { AdminView } from "./screens/AdminView";
 
 type Screen =
   | "welcome"
@@ -28,7 +29,8 @@ type Screen =
   | "confirm"
   | "success"
   | "tracker"
-  | "insights";
+  | "insights"
+  | "admin";
 
 /** Sensible pre-answered facts for the one-tap demo journeys. */
 const DEMO_AUTO_ANSWERS: Record<string, Answers> = {
@@ -97,6 +99,7 @@ export default function App() {
   const [screen, setScreenRaw] = useState<Screen>(() => {
     const path = window.location.pathname.replace(/^\//, "");
     if (path === "insights") return "insights";
+    if (path === "admin") return "admin";
     const hash = window.location.hash.replace(/^#\/?/, "");
     const validScreens: Screen[] = [
       "welcome",
@@ -107,6 +110,7 @@ export default function App() {
       "prepare",
       "tracker",
       "insights",
+      "admin",
     ];
     return validScreens.includes(hash as Screen) ? (hash as Screen) : "welcome";
   });
@@ -124,6 +128,7 @@ export default function App() {
     "tracker",
     "success",
     "insights",
+    "admin",
   ];
 
   const setScreen = useCallback((next: Screen) => {
@@ -140,6 +145,10 @@ export default function App() {
         setScreenRaw("insights");
         return;
       }
+      if (path === "admin") {
+        setScreenRaw("admin");
+        return;
+      }
       const hash = window.location.hash.replace(/^#\/?/, "");
       const validScreens: Screen[] = [
         "welcome",
@@ -150,6 +159,7 @@ export default function App() {
         "prepare",
         "tracker",
         "insights",
+        "admin",
       ];
       if (validScreens.includes(hash as Screen)) {
         setScreenRaw(hash as Screen);
@@ -347,6 +357,7 @@ export default function App() {
             onStart={() => setScreen("incident")}
             onAbout={() => setAboutOpen(true)}
             onInsights={() => setScreen("insights")}
+            onAdmin={() => setScreen("admin")}
             caseCount={trackedCases.length}
             onTrack={() => {
               const latest = trackedCases[0];
@@ -450,7 +461,17 @@ export default function App() {
         )}
 
         {screen === "insights" && (
-          <PrototypeInsights onBack={() => setScreen("welcome")} />
+          <PrototypeInsights
+            onBack={() => setScreen("welcome")}
+            onAdmin={() => setScreen("admin")}
+          />
+        )}
+
+        {screen === "admin" && (
+          <AdminView
+            onCitizenView={() => setScreen("welcome")}
+            onInsightsView={() => setScreen("insights")}
+          />
         )}
       </main>
 
@@ -458,6 +479,7 @@ export default function App() {
         <AboutSheet
           onClose={() => setAboutOpen(false)}
           onOpenInsights={() => setScreen("insights")}
+          onOpenAdmin={() => setScreen("admin")}
         />
       )}
     </div>

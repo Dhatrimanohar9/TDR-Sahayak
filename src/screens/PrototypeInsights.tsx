@@ -60,7 +60,13 @@ const SAMPLE_METRICS: ScenarioMetric[] = [
 
 const TOTAL_CASES = 1250;
 
-export function PrototypeInsights({ onBack }: { onBack: () => void }) {
+export function PrototypeInsights({
+  onBack,
+  onAdmin,
+}: {
+  onBack: () => void;
+  onAdmin?: () => void;
+}) {
   return (
     <div className="animate-fade-up">
       <ScreenHeader
@@ -68,6 +74,35 @@ export function PrototypeInsights({ onBack }: { onBack: () => void }) {
         subtitle="Synthetic distribution of railway disruption inquiries."
         onBack={onBack}
       />
+
+      {/* Cross-View Navigation Bar */}
+      {onAdmin && (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rail-200 bg-white p-2 text-xs">
+          <span className="font-bold text-rail-950 px-2">Navigation:</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={onBack}
+              className="rounded-lg px-2.5 py-1.5 font-bold text-stone-600 hover:bg-rail-50 hover:text-rail-900 transition-colors"
+            >
+              👤 Citizen View
+            </button>
+            <button
+              type="button"
+              onClick={onAdmin}
+              className="rounded-lg px-2.5 py-1.5 font-bold text-stone-600 hover:bg-rail-50 hover:text-rail-900 transition-colors"
+            >
+              🛠️ Admin View
+            </button>
+            <button
+              type="button"
+              className="rounded-lg bg-rail-900 px-2.5 py-1.5 font-bold text-white shadow-2xs"
+            >
+              📊 Prototype Insights (Active)
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Prominent Synthetic Data Notice */}
       <div className="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 shadow-sm">
