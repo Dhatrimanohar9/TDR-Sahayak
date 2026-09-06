@@ -115,10 +115,10 @@ export function PrototypeInsights({
           </span>
           <div>
             <p className="text-xs font-bold text-amber-950 uppercase tracking-wide">
-              Illustrative Demo Analytics
+              Synthetic Demonstration · Future Concept
             </p>
             <p className="mt-0.5 text-xs text-amber-900 leading-relaxed font-medium">
-              Illustrative demo analytics — based on synthetic sample cases. No real passenger data is included.
+              Illustrative demo analytics based on synthetic sample cases — not based on live passenger data.
             </p>
           </div>
         </div>

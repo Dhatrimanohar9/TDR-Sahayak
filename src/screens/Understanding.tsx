@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Badge, Button, Card, FactRow, ScreenHeader, StepProgress } from "../components/ui";
 import type { AnalysisResult, CaseFacts, FollowUpQuestion, MissingFactKey } from "../types";
 import { keyInformation, journeyStatus, travelledLabel } from "../lib/flow";
+import { decide } from "../lib/decisionEngine";
 
 function ConfidenceMeter({ confidence }: { confidence: number }) {
   const percent = Math.round(confidence * 100);
@@ -85,11 +86,33 @@ export function Understanding({
 }) {
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [showCorrection, setShowCorrection] = useState(false);
+  const [lastChange, setLastChange] = useState<{
+    factName: string;
+    beforeScenarioCode: string;
+    beforeScenarioTitle: string;
+    beforeAction: string;
+  } | null>(null);
 
   const isTravelUncertain = facts.passengerTravelled === "unknown";
   const ready = question === null && !isTravelUncertain;
+  const currentDec = decide(facts);
 
   const handleCorrection = (key: MissingFactKey, value: string) => {
+    const factNameMap: Record<string, string> = {
+      passengerTravelled: "Travel Status",
+      passengerBoarded: "Boarding Status",
+      journeyCompleted: "Journey Completion",
+      delayDuration: "Delay Duration",
+      disruptionType: "Disruption Type",
+      cancelledBeforeDeparture: "Cancellation Status",
+      journeyDate: "Scheduled Journey Date",
+    };
+    setLastChange({
+      factName: factNameMap[key] || key,
+      beforeScenarioCode: currentDec.scenario,
+      beforeScenarioTitle: currentDec.scenarioTitle,
+      beforeAction: currentDec.recommendedAction,
+    });
     if (onCorrectFact) {
       onCorrectFact(key, value);
     } else {
@@ -106,6 +129,61 @@ export function Understanding({
         right={<ConfidenceMeter confidence={analysis.confidence} />}
       />
       <StepProgress step={2} />
+
+      {/* Before vs After Compact Rule Comparison Card */}
+      {lastChange && (
+        <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-4 shadow-sm animate-fade-up">
+          <div className="flex items-center justify-between border-b border-amber-200/80 pb-2 mb-3">
+            <div className="flex items-center gap-2">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-600"></span>
+              </span>
+              <span className="text-xs font-black uppercase tracking-wider text-amber-950">
+                Fact Updated: {lastChange.factName}
+              </span>
+            </div>
+            <button
+              onClick={() => setLastChange(null)}
+              className="text-stone-400 hover:text-stone-700 text-xs font-bold px-1"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            {/* Before */}
+            <div className="rounded-xl border border-stone-200 bg-white/80 p-3 text-xs">
+              <span className="text-[10px] font-bold text-stone-500 uppercase tracking-wide block mb-1">
+                Before Correction
+              </span>
+              <p className="font-bold text-stone-800">
+                Scenario {lastChange.beforeScenarioCode} · {lastChange.beforeScenarioTitle}
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-stone-600 italic">
+                “{lastChange.beforeAction}”
+              </p>
+            </div>
+
+            {/* After */}
+            <div className="rounded-xl border border-rail-800 bg-rail-900 text-white p-3 text-xs shadow-xs">
+              <span className="text-[10px] font-bold text-amber-signal uppercase tracking-wide block mb-1">
+                After Correction (Active Rule)
+              </span>
+              <p className="font-bold text-white">
+                Scenario {currentDec.scenario} · {currentDec.scenarioTitle}
+              </p>
+              <p className="mt-1 text-[11px] leading-relaxed text-rail-100/90 italic">
+                “{currentDec.recommendedAction}”
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-3 text-xs font-extrabold text-amber-950 flex items-center gap-1.5">
+            <span>⚖️</span> Because this fact changed, a different rule now applies.
+          </p>
+        </div>
+      )}
 
       {/* Primary Display: One-sentence plain-language summary first */}
       <Card className="mt-5 border-rail-600/30 bg-white shadow-sm">
@@ -280,6 +358,20 @@ export function Understanding({
             </h3>
             <p className="mt-0.5 text-xs text-stone-600">
               Tap any option to immediately update how the rule engine evaluates your claim.
+            </p>
+          </div>
+
+          {/* Live Recalculation Summary Box */}
+          <div className="mb-4 rounded-xl bg-rail-900 text-white p-3 shadow-sm border border-rail-800">
+            <div className="flex items-center justify-between text-[10px] font-bold text-amber-signal uppercase tracking-wider mb-1">
+              <span>⚡ Live Rule Engine Evaluation</span>
+              <span>Scenario {decide(facts).scenario}</span>
+            </div>
+            <p className="text-xs font-extrabold text-white">
+              {decide(facts).scenarioTitle}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-rail-100/90 italic">
+              “{decide(facts).recommendedAction}”
             </p>
           </div>
 

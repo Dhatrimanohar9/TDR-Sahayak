@@ -29,8 +29,8 @@ export function IncidentInput({
   return (
     <div className="animate-fade-up">
       <ScreenHeader
-        title="What happened during your journey?"
-        subtitle="Use your own words — a sentence or two is enough."
+        title="Describe your journey incident"
+        subtitle="Use your own words in English or Hindi, dictate using microphone, or choose a sample scenario below."
         onBack={onBack}
       />
       <StepProgress step={1} />

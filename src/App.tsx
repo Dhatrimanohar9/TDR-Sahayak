@@ -355,6 +355,7 @@ export default function App() {
         {screen === "welcome" && (
           <Welcome
             onStart={() => setScreen("incident")}
+            onRunDemo={(scenarioId) => runDemoJourney(scenarioId)}
             onAbout={() => setAboutOpen(true)}
             onInsights={() => setScreen("insights")}
             onAdmin={() => setScreen("admin")}

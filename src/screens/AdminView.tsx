@@ -152,10 +152,10 @@ export function AdminView({
           </span>
           <div>
             <p className="text-xs font-bold text-amber-950 uppercase tracking-wide">
-              Demonstration Dashboard
+              Admin Demonstration Only
             </p>
             <p className="mt-0.5 text-xs text-amber-900 leading-relaxed font-medium">
-              Admin demonstration only — uses synthetic sample cases. No real passenger data is included.
+              Synthetic data · No real passenger records are included.
             </p>
           </div>
         </div>

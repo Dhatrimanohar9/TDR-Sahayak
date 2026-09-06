@@ -205,8 +205,7 @@ export function Disclaimer({ className = "" }: { className?: string }) {
     <p
       className={`text-[11px] leading-relaxed text-stone-500 ${className}`}
     >
-      Prototype using synthetic data. This application does not submit real TDR
-      or refund claims.
+      This prototype explains a possible next step and prepares a mock case. It does not submit a real TDR or connect to IRCTC.
     </p>
   );
 }
