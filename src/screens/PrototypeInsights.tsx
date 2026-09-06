@@ -227,6 +227,135 @@ export function PrototypeInsights({ onBack }: { onBack: () => void }) {
         </p>
       </div>
 
+      {/* ──────────────────────────────────────────────────────────── */}
+      {/* FUTURE INTELLIGENCE LAYER (CONCEPTUAL PRODUCTION VISION)     */}
+      {/* ──────────────────────────────────────────────────────────── */}
+      <div className="mt-6 space-y-4">
+        {/* Header Banner & Concept Disclaimer */}
+        <Card className="border-rail-800 bg-rail-900 text-white shadow-md">
+          <div className="flex items-center justify-between border-b border-white/10 pb-3">
+            <div className="flex items-center gap-2">
+              <span aria-hidden className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-signal text-rail-950 text-xs font-black">
+                ⚡
+              </span>
+              <h2 className="text-base font-bold text-white">
+                Future Intelligence Layer
+              </h2>
+            </div>
+            <Badge tone="amber">Future Concept</Badge>
+          </div>
+
+          <div className="mt-3.5 space-y-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-amber-signal">
+              Future concept — not connected to live passenger data.
+            </p>
+            <p className="text-xs leading-relaxed text-rail-100 font-medium">
+              With user consent and anonymization, future versions could aggregate recurring disruption patterns and use them to improve the questions and recommendations shown by TDR Sahayak.
+            </p>
+          </div>
+        </Card>
+
+        {/* Visual Flow Diagram */}
+        <Card>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-bold text-rail-950">
+              System Learning Cycle
+            </h3>
+            <span className="text-[11px] font-semibold text-stone-500">
+              Anonymized Data Pipeline
+            </span>
+          </div>
+
+          <div className="mt-4 flex flex-col items-center justify-center space-y-1.5 text-center text-xs">
+            {[
+              { title: "Anonymized case", desc: "Citizen submits disruption description with consent" },
+              { title: "Pattern detection", desc: "System identifies recurring confusion points & terminology" },
+              { title: "Better clarification questions", desc: "Targeted questions dynamically adapted to user context" },
+              { title: "Better recommendations", desc: "Statutory guidance fine-tuned for edge cases" },
+              { title: "Less passenger confusion", desc: "Clear, explainable, single-step citizen resolution" },
+            ].map((step, idx, arr) => (
+              <div key={step.title} className="w-full flex flex-col items-center">
+                <div className="w-full rounded-xl border border-rail-100 bg-rail-50/60 px-4 py-2.5 shadow-2xs">
+                  <p className="font-bold text-rail-950">{step.title}</p>
+                  <p className="text-[11px] text-stone-500 mt-0.5">{step.desc}</p>
+                </div>
+                {idx < arr.length - 1 && (
+                  <div className="my-1 text-rail-600 font-extrabold text-sm" aria-hidden>
+                    ↓
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* "What We Could Learn" Insight Card */}
+        <Card>
+          <h3 className="text-sm font-bold text-rail-950">
+            What We Could Learn from Aggregated Data
+          </h3>
+          <p className="mt-1 text-xs text-stone-600">
+            Key insights anonymized case intelligence would reveal:
+          </p>
+
+          <div className="mt-3.5 grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+            {[
+              {
+                title: "Fact Correction Patterns",
+                detail: "Which extracted facts passengers most often correct (e.g. travel status vs delay duration).",
+              },
+              {
+                title: "Confusion Hotspots",
+                detail: "Which incident types create the most passenger uncertainty and follow-up questions.",
+              },
+              {
+                title: "Clarification Efficacy",
+                detail: "Which clarification questions are asked most frequently and resolve missing facts best.",
+              },
+              {
+                title: "Partial-Journey Trends",
+                detail: "How many cases involve partial-journey disruption requiring TTE certificates.",
+              },
+              {
+                title: "Language & Hinglish",
+                detail: "How code-mixed Hinglish phrases map to statutory railway disruption categories.",
+              },
+              {
+                title: "User Comprehension",
+                detail: "Whether passengers understand the recommended next step and statutory timing windows.",
+              },
+            ].map((item) => (
+              <div
+                key={item.title}
+                className="rounded-xl border border-rail-100 bg-stone-50/80 p-3"
+              >
+                <p className="font-bold text-rail-950 flex items-center gap-1.5">
+                  <span className="text-rail-600 font-extrabold">✦</span> {item.title}
+                </p>
+                <p className="mt-1 text-[11px] leading-relaxed text-stone-600">
+                  {item.detail}
+                </p>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Privacy and Responsible Data Note */}
+        <div className="rounded-xl border border-amber-200 bg-amber-soft p-3.5 text-xs text-amber-950">
+          <div className="flex items-start gap-2">
+            <span aria-hidden className="mt-0.5 text-amber-800 font-bold">🔒</span>
+            <div>
+              <p className="font-bold uppercase tracking-wider text-[10px] text-amber-900">
+                Privacy & Responsible Data Note
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-amber-900/90 font-medium">
+                Any future analytics system would require explicit user consent, data minimization, anonymization, secure storage, and an option to delete data.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Back button */}
       <div className="mt-6 space-y-3">
         <Button variant="secondary" onClick={onBack}>
