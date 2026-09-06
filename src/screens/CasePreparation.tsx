@@ -7,6 +7,7 @@ import { formatJourneyDateTime } from "../lib/riskEngine";
 const EDITABLE: MissingFactKey[] = [
   "passengerTravelled",
   "passengerBoarded",
+  "journeyCompleted",
   "delayDuration",
   "cancelledBeforeDeparture",
   "disruptionType",
@@ -18,6 +19,12 @@ function factLabel(key: MissingFactKey, facts: CaseFacts): string {
       return travelledLabel(facts.passengerTravelled);
     case "passengerBoarded":
       return travelledLabel(facts.passengerBoarded);
+    case "journeyCompleted":
+      return facts.journeyCompleted === true
+        ? "Completed"
+        : facts.journeyCompleted === false
+          ? "Incomplete / Disrupted midway"
+          : "Not confirmed";
     case "delayDuration":
       return facts.delayDuration === "gt6h"
         ? "More than 6 hours"
@@ -176,6 +183,8 @@ function questionLabel(key: MissingFactKey): string {
       return "Passenger travelled";
     case "passengerBoarded":
       return "Boarded the train";
+    case "journeyCompleted":
+      return "Journey completed";
     case "delayDuration":
       return "Delay duration";
     case "cancelledBeforeDeparture":

@@ -1,6 +1,12 @@
 import { Badge } from "../components/ui";
 
-export function AboutSheet({ onClose }: { onClose: () => void }) {
+export function AboutSheet({
+  onClose,
+  onOpenInsights,
+}: {
+  onClose: () => void;
+  onOpenInsights?: () => void;
+}) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center bg-rail-950/60 p-0 sm:items-center sm:p-6"
@@ -65,6 +71,21 @@ export function AboutSheet({ onClose }: { onClose: () => void }) {
             could work: describe → understand → clarify → decide → prepare →
             track.
           </p>
+
+          {onOpenInsights && (
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onOpenInsights();
+                }}
+                className="text-xs font-semibold text-rail-700 underline hover:text-rail-900"
+              >
+                View illustrative demo analytics (Prototype Insights) →
+              </button>
+            </div>
+          )}
         </div>
 
         <button

@@ -25,6 +25,7 @@ export function createCase(
       { label: "Under review", done: false, at: null },
       { label: "Next action identified", done: false, at: null },
       { label: "Mock outcome pending", done: false, at: null },
+      { label: "Simulated outcome resolved", done: false, at: null },
     ],
   };
   saveCase(kase);
@@ -39,15 +40,25 @@ export function advanceStatus(kase: TrackedCase): TrackedCase {
     "under_review",
     "next_action",
     "outcome_pending",
+    "resolved",
   ];
   const idx = Math.min(
     order.indexOf(kase.status) + 1,
     order.length - 1,
   );
+  // Ensure timeline has 5 steps even for older local cases
+  const baseTimeline =
+    kase.timeline.length >= 5
+      ? kase.timeline
+      : [
+          ...kase.timeline,
+          { label: "Simulated outcome resolved", done: false, at: null },
+        ];
+
   const updated: TrackedCase = {
     ...kase,
     status: order[idx],
-    timeline: kase.timeline.map((step, i) =>
+    timeline: baseTimeline.map((step, i) =>
       i <= idx ? { ...step, done: true, at: step.at ?? now } : step,
     ),
   };
@@ -74,7 +85,9 @@ function generateCaseId(): string {
 function loadCases(): TrackedCase[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as TrackedCase[]) : [];
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as TrackedCase[]) : [];
   } catch {
     return [];
   }

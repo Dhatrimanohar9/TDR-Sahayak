@@ -18,9 +18,29 @@ export const DEMO_SCENARIOS: DemoScenario[] = [
     text: "I travelled, but my journey was disrupted midway and the train was terminated early. I am confused about what I can do now.",
   },
   {
+    id: "partial-journey",
+    shortLabel: "Boarded but disrupted halfway",
+    text: "I boarded the train but the journey got disrupted halfway.",
+  },
+  {
+    id: "hinglish-partial-journey",
+    shortLabel: "Train mein chadh gaya tha, aadhe raste me ruka",
+    text: "Main train mein chadh gaya tha, lekin aadhe raste mein journey complete nahi hui.",
+  },
+  {
+    id: "partial-route-incomplete",
+    shortLabel: "Travelled part of route, could not complete",
+    text: "I travelled part of the route but could not complete the journey.",
+  },
+  {
     id: "refund-confusion",
     shortLabel: "I need help understanding a refund situation",
     text: "I am not sure which refund option applies to my situation. My trip did not go as planned and I still have my ticket.",
+  },
+  {
+    id: "ambiguous-situation",
+    shortLabel: "I'm confused about my situation",
+    text: "Something went wrong with my trip. I'm not sure what to do about it. I still have my ticket.",
   },
 ];
 
@@ -43,6 +63,14 @@ export const FOLLOW_UP_QUESTIONS: Record<MissingFactKey, FollowUpQuestion> = {
     options: [
       { value: "yes", label: "Yes, I boarded" },
       { value: "no", label: "No, I could not board" },
+    ],
+  },
+  journeyCompleted: {
+    id: "journeyCompleted",
+    prompt: "Did you complete the entire journey to your destination?",
+    options: [
+      { value: "yes", label: "Yes, I completed the journey" },
+      { value: "no", label: "No, journey was disrupted / ended halfway" },
     ],
   },
   delayDuration: {

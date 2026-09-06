@@ -31,6 +31,10 @@ export function buildCaseFacts(
     facts.passengerTravelled = answers.passengerTravelled === "yes";
   if (answers.passengerBoarded)
     facts.passengerBoarded = answers.passengerBoarded === "yes";
+  if (answers.journeyCompleted) {
+    facts.journeyCompleted = answers.journeyCompleted === "yes";
+    facts.partialJourney = answers.journeyCompleted === "no";
+  }
   if (answers.delayDuration)
     facts.delayDuration = answers.delayDuration as CaseFacts["delayDuration"];
   if (answers.cancelledBeforeDeparture)
@@ -52,7 +56,17 @@ export function buildCaseFacts(
  * classification may change (e.g. "ambiguous" becomes concrete).
  */
 export function refineIncidentType(f: IncidentFacts): IncidentFacts["incidentType"] {
-  if (f.passengerTravelled === true || f.passengerBoarded === true) return "travelled_disrupted";
+  // Check completed vs partial journey first
+  if (f.journeyCompleted === true) {
+    return "travelled_completed";
+  }
+  if (f.partialJourney === true || (f.passengerBoarded === true && f.journeyCompleted === false)) {
+    return "partial_journey";
+  }
+  if (f.passengerTravelled === true || f.passengerBoarded === true) {
+    if (f.journeyCompleted === false) return "partial_journey";
+    return f.incidentType === "partial_journey" ? "partial_journey" : "travelled_disrupted";
+  }
   if (f.passengerBoarded === false) {
     if (f.disruptionMentioned === "Could not board" || f.incidentType === "could_not_board") {
       return "could_not_board";
@@ -89,9 +103,13 @@ export function nextUnanswered(
 export function journeyStatus(f: CaseFacts): string {
   switch (f.incidentType) {
     case "delay_not_travelled":
-      return "Train delayed";
+      return "Train delayed (did not travel)";
     case "could_not_board":
       return "Could not board";
+    case "partial_journey":
+      return "Partial journey (disrupted en-route)";
+    case "travelled_completed":
+      return "Travelled & completed journey";
     case "travelled_disrupted":
       return "Journey disrupted";
     default:

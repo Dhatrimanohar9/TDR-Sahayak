@@ -3,11 +3,13 @@ import { Badge, Button, Card, Disclaimer } from "../components/ui";
 export function Welcome({
   onStart,
   onAbout,
+  onInsights,
   caseCount,
   onTrack,
 }: {
   onStart: () => void;
   onAbout: () => void;
+  onInsights: () => void;
   caseCount: number;
   onTrack: () => void;
 }) {
@@ -119,12 +121,20 @@ export function Welcome({
 
         <div className="flex flex-wrap items-center justify-between gap-2">
           <Badge tone="amber">Prototype · No sign-in needed</Badge>
-          <button
-            onClick={onAbout}
-            className="rounded-lg px-3 py-2 text-sm font-semibold text-rail-700 underline decoration-rail-100 underline-offset-4 hover:bg-rail-50"
-          >
-            How this prototype works
-          </button>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={onInsights}
+              className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-stone-500 hover:text-rail-900 hover:bg-rail-100/60 transition-colors"
+            >
+              Prototype Insights
+            </button>
+            <button
+              onClick={onAbout}
+              className="rounded-lg px-3 py-2 text-sm font-semibold text-rail-700 underline decoration-rail-100 underline-offset-4 hover:bg-rail-50"
+            >
+              How this prototype works
+            </button>
+          </div>
         </div>
 
         <Disclaimer className="text-center" />

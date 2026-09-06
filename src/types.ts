@@ -11,6 +11,8 @@ export type IncidentType =
   | "delay_not_travelled"
   | "could_not_board"
   | "travelled_disrupted"
+  | "partial_journey"
+  | "travelled_completed"
   | "ambiguous";
 
 /** How long the train was delayed, as understood from the story. */
@@ -21,6 +23,8 @@ export interface IncidentFacts {
   incidentType: IncidentType;
   passengerTravelled: boolean | "unknown";
   passengerBoarded: boolean | "unknown";
+  journeyCompleted: boolean | "unknown";
+  partialJourney: boolean | "unknown";
   delayDuration: DelayDuration;
   cancelledBeforeDeparture: boolean | "unknown";
   disruptionMentioned: string | null;
@@ -46,6 +50,7 @@ export interface AnalysisResult {
 export type MissingFactKey =
   | "passengerTravelled"
   | "passengerBoarded"
+  | "journeyCompleted"
   | "delayDuration"
   | "cancelledBeforeDeparture"
   | "disruptionType"
@@ -71,7 +76,7 @@ export interface CaseFacts extends IncidentFacts {
 
 export type RiskLevel = "low" | "medium" | "high";
 
-export type DecisionScenario = "A" | "B" | "C" | "D";
+export type DecisionScenario = "A" | "B" | "C" | "D" | "E";
 
 export interface DecisionResult {
   scenario: DecisionScenario;
@@ -99,7 +104,8 @@ export type CaseStatus =
   | "created"
   | "under_review"
   | "next_action"
-  | "outcome_pending";
+  | "outcome_pending"
+  | "resolved";
 
 export interface TrackedCase {
   caseId: string;

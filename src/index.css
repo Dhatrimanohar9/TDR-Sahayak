@@ -67,3 +67,25 @@ textarea {
 .animate-track {
   animation: pulse-track 1.6s ease-in-out infinite;
 }
+
+@keyframes gauge-fill {
+  from { stroke-dashoffset: var(--gauge-circumference, 213.6); }
+  /* to {} is implicit, uses the element's defined stroke-dashoffset */
+}
+.animate-gauge {
+  animation: gauge-fill 1s ease-out forwards;
+}
+
+@media print {
+  body {
+    background-color: #ffffff !important;
+    color: #111827 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  @page {
+    margin: 1.5cm;
+    size: A4 portrait;
+  }
+}

@@ -75,6 +75,8 @@ function validateAnalysis(data: unknown): AnalysisResult | null {
     "delay_not_travelled",
     "could_not_board",
     "travelled_disrupted",
+    "partial_journey",
+    "travelled_completed",
     "ambiguous",
   ];
   if (!allowedIncidentTypes.includes(factsObj.incidentType as string)) return null;
@@ -87,6 +89,8 @@ function validateAnalysis(data: unknown): AnalysisResult | null {
       incidentType: factsObj.incidentType as AnalysisResult["facts"]["incidentType"],
       passengerTravelled: tri(factsObj.passengerTravelled),
       passengerBoarded: tri(factsObj.passengerBoarded),
+      journeyCompleted: tri(factsObj.journeyCompleted),
+      partialJourney: tri(factsObj.partialJourney),
       delayDuration: (["lt3h", "3to6h", "gt6h"].includes(
         factsObj.delayDuration as string,
       )

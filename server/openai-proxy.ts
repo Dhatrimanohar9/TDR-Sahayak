@@ -17,9 +17,24 @@ interface ChatCompletionResponse {
 }
 
 const SYSTEM_PROMPT = `You interpret Indian railway journey incident reports for a refund-guidance prototype.
-Return ONLY compact JSON, no markdown, matching this shape:
-{"facts":{"incidentType":"delay_not_travelled|could_not_board|travelled_disrupted|ambiguous","passengerTravelled":true|false|"unknown","passengerBoarded":true|false|"unknown","delayDuration":"lt3h|3to6h|gt6h|unsure","cancelledBeforeDeparture":true|false|"unknown","disruptionMentioned":string|null,"journeyDateMentioned":string|null},"confidence":0.8,"summary":"one short plain sentence summarizing what happened"}
-Rules: set unknown when the text does not clearly state a fact. Do not invent dates, PNRs, or station names. "ambiguous" only when nothing about the incident is inferable.`;
+Handle English and Hindi-English code-mixed (Hinglish / Roman Hindi) inputs accurately.
+
+Output ONLY compact JSON, no markdown, matching this shape:
+{"facts":{"incidentType":"delay_not_travelled|could_not_board|travelled_disrupted|partial_journey|travelled_completed|ambiguous","passengerTravelled":true|false|"unknown","passengerBoarded":true|false|"unknown","journeyCompleted":true|false|"unknown","partialJourney":true|false|"unknown","delayDuration":"lt3h|3to6h|gt6h|unsure","cancelledBeforeDeparture":true|false|"unknown","disruptionMentioned":string|null,"journeyDateMentioned":string|null},"confidence":0.8,"summary":"one short plain sentence summarizing what happened"}
+
+RULES & HINGLISH UNDERSTANDING:
+1. CODE-MIXED EXAMPLES:
+   - "Train bahut late thi, isliye maine travel nahi kiya" -> incidentType: "delay_not_travelled", passengerTravelled: false, delayDuration: "3to6h", disruptionMentioned: "Train delayed".
+   - "Main train mein chadh gaya tha, but aadhe raste mein journey disrupt ho gayi" -> incidentType: "partial_journey", passengerBoarded: true, passengerTravelled: true, journeyCompleted: false, partialJourney: true, disruptionMentioned: "Disrupted midway".
+   - "Train miss ho gayi because station pe late pahucha" -> incidentType: "could_not_board", passengerBoarded: false, passengerTravelled: false, disruptionMentioned: "Missed train (passenger reached station late)".
+   - "Maine journey complete nahi ki, beech mein problem ho gayi" -> incidentType: "partial_journey", passengerBoarded: true, passengerTravelled: true, journeyCompleted: false, partialJourney: true, disruptionMentioned: "Disrupted midway".
+   - "Train cancel ho gayi aur maine travel nahi kiya" -> incidentType: "delay_not_travelled", passengerTravelled: false, cancelledBeforeDeparture: true, disruptionMentioned: "Train cancelled".
+
+2. KEY DISTINCTIONS:
+   - Distinguish train delay ("train late thi", "train der se aayi") from passenger arriving late ("station pe late pahucha", "traffic mein fas gaya").
+   - Distinguish missed train ("train miss ho gayi", "chhut gayi") from cancelled train ("train cancel ho gayi", "radd ho gayi").
+   - Distinguish did-not-travel ("travel nahi kiya", "board nahi kiya") from partial journey ("aadhe raste mein", "beech mein", "journey complete nahi hui").
+   - If travel status is unclear, set passengerTravelled: "unknown" and incidentType: "ambiguous". Never invent missing facts.`;
 
 export function openAiProxyPlugin(): Plugin {
   return {

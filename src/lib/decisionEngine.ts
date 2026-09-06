@@ -25,8 +25,15 @@ export function decide(facts: CaseFacts): DecisionResult {
       return scenarioA(facts);
     case "could_not_board":
       return scenarioB(facts);
+    case "partial_journey":
+      return scenarioPartialJourney(facts);
+    case "travelled_completed":
+      return scenarioTravelledCompleted(facts);
     case "travelled_disrupted":
-      return scenarioC(facts);
+      if (facts.journeyCompleted === true) {
+        return scenarioTravelledCompleted(facts);
+      }
+      return scenarioPartialJourney(facts);
     default:
       return scenarioD(facts);
   }
@@ -124,30 +131,59 @@ function scenarioB(facts: CaseFacts): DecisionResult {
 }
 
 /* ------------------------------------------------------------------ */
-/* Scenario C — travelled but journey was disrupted                    */
+/* Scenario C — Partial journey disruption (boarded, disrupted halfway)*/
 /* ------------------------------------------------------------------ */
-function scenarioC(facts: CaseFacts): DecisionResult {
+function scenarioPartialJourney(facts: CaseFacts): DecisionResult {
   return {
     scenario: "C",
-    scenarioTitle: "Travelled with a disrupted journey",
-    classification: "You travelled, but the journey itself was disrupted.",
+    scenarioTitle: "Partial journey disruption — travelled part of route",
+    classification: "You boarded the train and travelled part of the route, but the journey was interrupted before your destination.",
     recommendedAction:
-      "Check whether a partial refund or travel disruption claim applies to the portion of the journey that failed.",
+      "Obtain a deboarding certificate or TTE endorsement at the station where your journey stopped, and file a TDR for the untravelled portion.",
     riskLevel: riskFor("medium", facts),
     riskNote:
-      "Partial-journey claims depend on where the disruption happened, so record the station and time it occurred.",
+      "Partial journey claims require proof of the deboarding station and a TTE certificate. Filing quickly before chart reconciliation is critical.",
     missingInformation: collectMissing(facts, [
-      facts.disruptionMentioned ? null : "The type of disruption you faced",
+      facts.disruptionMentioned ? null : "The reason the journey was terminated en-route",
       facts.journeyDateMentioned ? null : "The exact journey date and train number",
-      "The station where the disruption occurred",
+      "The station where your journey was cut short",
     ]),
     explanation:
-      "You told us you travelled but the journey was disrupted. In this prototype, that points to a partial-journey claim: what matters most is where and how the disruption happened. Based on the information provided, documenting the disruption point is the recommended next step.",
+      "You reported that you boarded and travelled part of the route, but could not complete the journey. Under Indian Railways rules, this qualifies for a refund of the untravelled distance. The crucial requirement is obtaining an Excess Fare Ticket (EFT) or certificate from the TTE or Station Master at your deboarding point.",
     checklist: [
-      "Note the station and time where the disruption happened",
-      "Keep your ticket and any boarding records",
-      "Record how much of the journey you completed",
-      "Save announcements or messages about the disruption",
+      "Obtain an Excess Fare Ticket (EFT) or written certificate from the TTE at the deboarding station",
+      "Note the exact deboarding station and scheduled arrival time",
+      "Keep your original ticket copy and booking reference",
+      "File a TDR under 'Train Terminated Short of Destination' or 'Passenger Deboarded En Route' within 72 hours",
+      "Attach the TTE certificate number in your TDR remarks",
+    ],
+    deadlineKnown: facts.journeyDateTime !== "",
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/* Scenario E — Travelled and completed journey                        */
+/* ------------------------------------------------------------------ */
+function scenarioTravelledCompleted(facts: CaseFacts): DecisionResult {
+  return {
+    scenario: "E",
+    scenarioTitle: "Travelled and completed journey",
+    classification: "You boarded the train and completed your journey to the destination.",
+    recommendedAction:
+      "Full fare refund is not applicable since travel was completed. If you suffered amenity failure (such as AC breakdown) or coach downgrade, file a difference-in-fare TDR.",
+    riskLevel: riskFor("low", facts),
+    riskNote:
+      "Indian Railways does not refund ticket fare for arrival delay once the journey is completed to destination.",
+    missingInformation: collectMissing(facts, [
+      facts.disruptionMentioned ? null : "Whether any amenity or coach failure occurred",
+      facts.journeyDateMentioned ? null : "The exact journey date and train number",
+    ]),
+    explanation:
+      "You told us you completed the entire journey to your destination. Under Indian Railways refund rules, standard arrival delays do not entitle a passenger to a ticket refund after completion. However, if you were downgraded in travel class or AC failed en route, you may claim the fare difference.",
+    checklist: [
+      "Confirm if any coach amenity failure (like AC not working) was officially certified by TTE",
+      "If downgraded in travel class, obtain a TTE Certificate for difference of fare",
+      "Do not file for full refund under delay rules, as completed journeys will be rejected",
     ],
     deadlineKnown: facts.journeyDateTime !== "",
   };

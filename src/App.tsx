@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { AnalysisResult, DecisionResult, DeadlineAssessment, MissingFactKey, TrackedCase } from "./types";
 import { analyzeIncident } from "./lib/ai/analyzeIncident";
 import { decide } from "./lib/decisionEngine";
@@ -15,6 +15,7 @@ import { CasePreparation, MockConfirm } from "./screens/CasePreparation";
 import { SubmissionSuccess } from "./screens/SubmissionSuccess";
 import { CaseTracker } from "./screens/CaseTracker";
 import { AboutSheet } from "./screens/AboutSheet";
+import { PrototypeInsights } from "./screens/PrototypeInsights";
 
 type Screen =
   | "welcome"
@@ -26,7 +27,8 @@ type Screen =
   | "prepare"
   | "confirm"
   | "success"
-  | "tracker";
+  | "tracker"
+  | "insights";
 
 /** Sensible pre-answered facts for the one-tap demo journeys. */
 const DEMO_AUTO_ANSWERS: Record<string, Answers> = {
@@ -49,9 +51,28 @@ const DEMO_AUTO_ANSWERS: Record<string, Answers> = {
     delayDuration: "3to6h",
     journeyDate: "past_3d",
   },
+  "partial-journey": {
+    passengerBoarded: "yes",
+    passengerTravelled: "yes",
+    journeyCompleted: "no",
+    journeyDate: "past_3d",
+  },
+  "hinglish-partial-journey": {
+    passengerBoarded: "yes",
+    passengerTravelled: "yes",
+    journeyCompleted: "no",
+    journeyDate: "past_3d",
+  },
+  "partial-route-incomplete": {
+    passengerBoarded: "yes",
+    passengerTravelled: "yes",
+    journeyCompleted: "no",
+    journeyDate: "past_3d",
+  },
   "refund-confusion": {
     journeyDate: "past_week",
   },
+  "ambiguous-situation": {},
 };
 
 function journeyAnswerToDateTime(value: string): string {
@@ -73,9 +94,88 @@ function journeyAnswerToDateTime(value: string): string {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("welcome");
+  const [screen, setScreenRaw] = useState<Screen>(() => {
+    const path = window.location.pathname.replace(/^\//, "");
+    if (path === "insights") return "insights";
+    const hash = window.location.hash.replace(/^#\/?/, "");
+    const validScreens: Screen[] = [
+      "welcome",
+      "incident",
+      "understanding",
+      "decision",
+      "deadline",
+      "prepare",
+      "tracker",
+      "insights",
+    ];
+    return validScreens.includes(hash as Screen) ? (hash as Screen) : "welcome";
+  });
   const [aboutOpen, setAboutOpen] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
+
+  /** Screens that should appear in browser history (skip transient ones). */
+  const NAVIGABLE: Screen[] = [
+    "welcome",
+    "incident",
+    "understanding",
+    "decision",
+    "deadline",
+    "prepare",
+    "tracker",
+    "success",
+    "insights",
+  ];
+
+  const setScreen = useCallback((next: Screen) => {
+    setScreenRaw(next);
+    if (NAVIGABLE.includes(next)) {
+      window.history.pushState({ screen: next }, "", `#${next}`);
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleRoute() {
+      const path = window.location.pathname.replace(/^\//, "");
+      if (path === "insights") {
+        setScreenRaw("insights");
+        return;
+      }
+      const hash = window.location.hash.replace(/^#\/?/, "");
+      const validScreens: Screen[] = [
+        "welcome",
+        "incident",
+        "understanding",
+        "decision",
+        "deadline",
+        "prepare",
+        "tracker",
+        "insights",
+      ];
+      if (validScreens.includes(hash as Screen)) {
+        setScreenRaw(hash as Screen);
+      } else {
+        setScreenRaw("welcome");
+      }
+    }
+
+    function onPopState(e: PopStateEvent) {
+      const s = (e.state as { screen?: Screen } | null)?.screen;
+      if (s) setScreenRaw(s);
+      else handleRoute();
+    }
+
+    window.addEventListener("popstate", onPopState);
+    window.addEventListener("hashchange", handleRoute);
+
+    // Set initial history entry so first back press doesn't leave the app.
+    if (!window.location.hash && window.location.pathname.replace(/^\//, "") !== "insights") {
+      window.history.replaceState({ screen: "welcome" }, "", "#welcome");
+    }
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("hashchange", handleRoute);
+    };
+  }, []);
 
   const [incidentText, setIncidentText] = useState("");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
@@ -107,6 +207,25 @@ export default function App() {
     if (!key) return null;
     return FOLLOW_UP_QUESTIONS[key];
   }, [analysis, facts, answers]);
+
+  // Guard against blank screen if user reloads on a stateful sub-screen
+  useEffect(() => {
+    if (
+      ["understanding", "decision", "deadline", "prepare", "confirm"].includes(screen) &&
+      !facts
+    ) {
+      setScreenRaw("welcome");
+      window.history.replaceState({ screen: "welcome" }, "", "#welcome");
+    } else if (screen === "tracker" && !currentCase) {
+      const cases = listCases();
+      if (cases.length > 0) {
+        setCurrentCase(cases[0]);
+      } else {
+        setScreenRaw("welcome");
+        window.history.replaceState({ screen: "welcome" }, "", "#welcome");
+      }
+    }
+  }, [screen, facts, currentCase]);
 
   function resetAll() {
     setIncidentText("");
@@ -153,9 +272,9 @@ export default function App() {
   }
 
   return (
-    <div className="mx-auto min-h-dvh max-w-lg px-4 pb-16 pt-4 sm:max-w-xl sm:pt-8">
+    <div className="mx-auto min-h-dvh max-w-lg px-4 pb-16 pt-4 sm:max-w-xl sm:pt-8 print:m-0 print:max-w-none print:p-0 print:min-h-0">
       {/* App bar */}
-      <header className="mb-5 flex items-center justify-between">
+      <header className="mb-5 flex items-center justify-between print:hidden">
         <button
           onClick={() => setScreen("welcome")}
           className="flex items-center gap-2.5"
@@ -227,6 +346,7 @@ export default function App() {
           <Welcome
             onStart={() => setScreen("incident")}
             onAbout={() => setAboutOpen(true)}
+            onInsights={() => setScreen("insights")}
             caseCount={trackedCases.length}
             onTrack={() => {
               const latest = trackedCases[0];
@@ -258,16 +378,20 @@ export default function App() {
             onAnswer={(value) => {
               if (question) handleAnswer(question.id as MissingFactKey, value);
             }}
+            onCorrectFact={(key, value) => handleAnswer(key, value)}
             onDone={() => setScreen("decision")}
             onBack={() => setScreen("incident")}
           />
         )}
 
-        {screen === "decision" && facts && decision && (
+        {screen === "decision" && facts && decision && analysis && deadline && (
           <DecisionResultScreen
             facts={facts}
             decision={decision}
-            onCheckDeadline={() => setScreen("deadline")}
+            analysis={analysis}
+            assessment={deadline}
+            onJourneyDateTimeChange={setJourneyDateTime}
+            onPrepareCase={() => setScreen("prepare")}
             onBack={() => setScreen("understanding")}
           />
         )}
@@ -290,7 +414,7 @@ export default function App() {
             onEditKey={setEditingKey}
             onAnswerChange={handleAnswer}
             onCreateClaim={() => setScreen("confirm")}
-            onBack={() => setScreen("deadline")}
+            onBack={() => setScreen("decision")}
           />
         )}
 
@@ -324,9 +448,18 @@ export default function App() {
             onHome={() => setScreen("welcome")}
           />
         )}
+
+        {screen === "insights" && (
+          <PrototypeInsights onBack={() => setScreen("welcome")} />
+        )}
       </main>
 
-      {aboutOpen && <AboutSheet onClose={() => setAboutOpen(false)} />}
+      {aboutOpen && (
+        <AboutSheet
+          onClose={() => setAboutOpen(false)}
+          onOpenInsights={() => setScreen("insights")}
+        />
+      )}
     </div>
   );
 }
