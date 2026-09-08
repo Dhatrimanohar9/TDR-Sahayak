@@ -260,12 +260,21 @@ export interface ValidationMetrics {
   records: ValidationStudyRecord[];
 }
 
-/** Engineering iteration tracking item: Finding → Product Change → Retest Status. */
+/** Engineering iteration tracking item: Finding → Product Change → Retest Result → Evidence Note. */
 export interface FeedbackImprovementItem {
   id: string;
   finding: string;
   source: string;
   productChange: string;
-  retestStatus: "retested_validated" | "pending_retest" | "in_observation";
-  retestNotes: string;
+  retestResult: "Validated in retest" | "Pending retest";
+  evidenceNote: string;
 }
+
+export interface StudyStatusInfo {
+  statusBadge: "No real study data collected" | "Pilot study in progress" | "Pilot study completed";
+  participantCountText: string;
+  tone: "neutral" | "amber" | "green";
+  totalParticipants: number;
+  totalScenarios: number;
+}
+

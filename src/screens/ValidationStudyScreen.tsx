@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Badge, Button, Card, Disclaimer, ScreenHeader } from "../components/ui";
 import {
   STUDY_SCENARIO_TASKS,
+  hasDuplicateParticipant,
   saveStudyRecord,
 } from "../lib/validationStore";
 import type { StudyScenarioTask, ValidationStudyRecord } from "../types";
@@ -225,6 +226,20 @@ export function ValidationStudyScreen({
               “{currentTask.narrativePrompt}”
             </p>
           </div>
+
+          {/* Duplicate Participant Warning */}
+          {hasDuplicateParticipant(participantCode, currentTask.id) && (
+            <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50/90 p-3 text-xs text-amber-950 flex items-start gap-2">
+              <span className="text-base leading-none">⚠️</span>
+              <div>
+                <p className="font-bold">Duplicate participant trial detected</p>
+                <p className="text-[11px] text-amber-900 mt-0.5">
+                  Participant <strong className="font-mono">{participantCode}</strong> has already recorded a response for Scenario {currentTask.scenarioCode}. Repeated testing of the same scenario on the same participant may bias comprehension measurements.
+                </p>
+              </div>
+            </div>
+          )}
+
 
           {/* Pre-Test Question */}
           <div className="mt-5 space-y-3">

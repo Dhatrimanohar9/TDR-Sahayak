@@ -13,6 +13,11 @@ import {
   seedShowcaseStudyData,
   FEEDBACK_IMPROVEMENTS,
   generateSubmissionSummary,
+  getLastExportedTimestamp,
+  setLastExportedTimestamp,
+  hasDuplicateParticipant,
+  getStudyStatus,
+  importStudyBackupJson,
 } from "./src/lib/validationStore";
 
 if (typeof globalThis.localStorage === "undefined") {
@@ -284,7 +289,10 @@ if (
 }
 
 const emptySummary = generateSubmissionSummary(false);
-if (!emptySummary.includes("Ready for Field Testing") || !emptySummary.includes("Zero Fabrication")) {
+if (
+  !emptySummary.includes("Real usability data has not yet been collected") ||
+  !emptySummary.includes("TDR Sahayak - Usability & Validation Summary")
+) {
   console.error("FAIL: Empty summary missing zero-fabrication notice!");
   allPassed = false;
 }
@@ -373,8 +381,178 @@ if (FEEDBACK_IMPROVEMENTS.length < 5) {
   console.log(`✓ Feedback-to-Improvement Items Documented: ${FEEDBACK_IMPROVEMENTS.length} engineering iterations`);
 }
 
+// 14. Test JSON Backup Import & Schema Validation
+console.log("\n[14] Testing JSON Backup Import & Schema Validation...");
+clearRealStudyData();
+const validBackupPayload = JSON.stringify({
+  metadata: { studyName: "Test Export" },
+  records: [
+    {
+      id: "REC-BACKUP-01",
+      participantCode: "P-BACKUP-01",
+      scenarioId: "task-could-not-board",
+      scenarioCode: "B",
+      language: "Telugu",
+      preAnswerId: "opt-b1",
+      preAnswerCorrect: false,
+      postAnswerId: "opt-b2",
+      postAnswerCorrect: true,
+      taskTimeSeconds: 45,
+      confidenceBefore: 1,
+      confidenceAfter: 5,
+      explanationUnderstood: true,
+      documentsUnderstood: true,
+      clarificationUnderstood: true,
+      comment: "Station memo rule was learned.",
+    },
+    {
+      id: "REC-BACKUP-02",
+      participantCode: "P-BACKUP-02",
+      scenarioId: "task-partial-journey",
+      scenarioCode: "C",
+      language: "English",
+      preAnswerId: "opt-c3",
+      preAnswerCorrect: false,
+      postAnswerId: "opt-c2",
+      postAnswerCorrect: true,
+      taskTimeSeconds: 50,
+      confidenceBefore: 2,
+      confidenceAfter: 4,
+      explanationUnderstood: true,
+      documentsUnderstood: true,
+      clarificationUnderstood: true,
+      comment: "EFT certificate clearly stated.",
+    },
+  ],
+});
+
+const importResult = importStudyBackupJson(validBackupPayload);
+console.log(`✓ Import Valid Backup -> Success: ${importResult.success} | Imported: ${importResult.importedCount}`);
+if (!importResult.success || importResult.importedCount !== 2) {
+  console.error("FAIL: Failed to import valid study backup JSON!");
+  allPassed = false;
+}
+
+// Test deduplication on re-import
+const duplicateImport = importStudyBackupJson(validBackupPayload);
+if (!duplicateImport.success || duplicateImport.importedCount !== 0) {
+  console.error("FAIL: Deduplication failed on re-importing identical backup!");
+  allPassed = false;
+}
+
+// Test malformed JSON rejection
+const malformedResult = importStudyBackupJson("{ invalid json string }");
+if (malformedResult.success) {
+  console.error("FAIL: Malformed JSON was not rejected!");
+  allPassed = false;
+} else {
+  console.log(`✓ Malformed JSON Rejected Gracefully: "${malformedResult.error}"`);
+}
+
+// 15. Test Duplicate Participant-Scenario Detection
+console.log("\n[15] Testing Duplicate Participant-Scenario Detection...");
+const isDup1 = hasDuplicateParticipant("P-BACKUP-01", "task-could-not-board");
+const isDup2 = hasDuplicateParticipant("p-backup-01", "task-could-not-board"); // case-insensitive
+const isNotDup = hasDuplicateParticipant("P-BACKUP-01", "task-delayed-unused"); // different scenario
+const isNewTester = hasDuplicateParticipant("P-NEW-USER", "task-could-not-board"); // new user
+
+console.log(`✓ Duplicate Checks -> Exact: ${isDup1} | Case-Insensitive: ${isDup2} | Different Scenario: ${isNotDup} | New Tester: ${isNewTester}`);
+if (!isDup1 || !isDup2 || isNotDup || isNewTester) {
+  console.error("FAIL: Duplicate participant detection failed!");
+  allPassed = false;
+}
+
+// 16. Test Pilot Study Status Progression & Timestamp Tracking
+console.log("\n[16] Testing Pilot Study Status Progression & Timestamp Tracking...");
+clearAllStudyData();
+const statusEmpty = getStudyStatus(getValidationMetrics(false), false);
+console.log(`✓ Status at 0 participants -> Badge: "${statusEmpty.statusBadge}" | Tone: ${statusEmpty.tone}`);
+if (statusEmpty.statusBadge !== "No real study data collected" || statusEmpty.tone !== "neutral") {
+  console.error("FAIL: Study status badge for 0 trials mismatch!");
+  allPassed = false;
+}
+
+// Add 3 participants (1 to 4 -> Pilot study in progress)
+for (let i = 1; i <= 3; i++) {
+  saveStudyRecord({
+    participantCode: `P-PROGRESS-0${i}`,
+    scenarioId: "task-delayed-unused",
+    scenarioCode: "A",
+    language: "English",
+    preAnswerId: "opt-a1",
+    preAnswerCorrect: false,
+    postAnswerId: "opt-a2",
+    postAnswerCorrect: true,
+    taskTimeSeconds: 30 + i * 5,
+    confidenceBefore: 2,
+    confidenceAfter: 5,
+    explanationUnderstood: true,
+    documentsUnderstood: true,
+    clarificationUnderstood: true,
+    isDemoSeeded: false,
+  });
+}
+
+const statusProgress = getStudyStatus(getValidationMetrics(false), true);
+console.log(`✓ Status at 3 participants -> Badge: "${statusProgress.statusBadge}" | Tone: ${statusProgress.tone} | Count: "${statusProgress.participantCountText}"`);
+if (statusProgress.statusBadge !== "Pilot study in progress" || statusProgress.tone !== "amber") {
+  console.error("FAIL: Study status badge for 3 trials mismatch!");
+  allPassed = false;
+}
+
+// Add 2 more participants (total 5 -> Pilot study completed)
+for (let i = 4; i <= 5; i++) {
+  saveStudyRecord({
+    participantCode: `P-PROGRESS-0${i}`,
+    scenarioId: "task-delayed-completed",
+    scenarioCode: "E",
+    language: "Hindi",
+    preAnswerId: "opt-e1",
+    preAnswerCorrect: false,
+    postAnswerId: "opt-e2",
+    postAnswerCorrect: true,
+    taskTimeSeconds: 25 + i * 5,
+    confidenceBefore: 3,
+    confidenceAfter: 5,
+    explanationUnderstood: true,
+    documentsUnderstood: true,
+    clarificationUnderstood: true,
+    isDemoSeeded: false,
+  });
+}
+
+const statusCompleted = getStudyStatus(getValidationMetrics(false), true);
+console.log(`✓ Status at 5 participants -> Badge: "${statusCompleted.statusBadge}" | Tone: ${statusCompleted.tone} | Count: "${statusCompleted.participantCountText}"`);
+if (statusCompleted.statusBadge !== "Pilot study completed" || statusCompleted.tone !== "green") {
+  console.error("FAIL: Study status badge for 5 trials mismatch!");
+  allPassed = false;
+}
+
+// Test last exported timestamp
+setLastExportedTimestamp("2026-09-08T12:00:00.000Z");
+const retrievedTs = getLastExportedTimestamp();
+if (retrievedTs !== "2026-09-08T12:00:00.000Z") {
+  console.error("FAIL: Last exported timestamp retrieval mismatch!");
+  allPassed = false;
+} else {
+  console.log(`✓ Last Exported Timestamp Verified: ${retrievedTs}`);
+}
+
+// 17. Test Exact Hackathon Submission Copy Text Matching
+console.log("\n[17] Testing Exact Hackathon Submission Copy Formatting...");
+clearAllStudyData();
+const zeroSummary = generateSubmissionSummary(false);
+const expectedZero = "Real usability data has not yet been collected. The validation framework is fully implemented and ready for study administration with 5 canonical scenarios. Synthetic benchmark: 1,250 cases at 96.2% simulated accuracy. Empirical study protocol established.";
+if (!zeroSummary.includes(expectedZero)) {
+  console.error("FAIL: Exact zero-participant summary string mismatch!");
+  allPassed = false;
+} else {
+  console.log("✓ Exact zero-participant copy summary verified!");
+}
+
 console.log("\n==================================================");
-console.log(allPassed ? "ALL 13 VERIFICATION CHECKS PASSED SUCCESSFULLY!" : "SOME CHECKS FAILED!");
+console.log(allPassed ? "ALL 17 VERIFICATION CHECKS PASSED SUCCESSFULLY!" : "SOME CHECKS FAILED!");
 console.log("==================================================");
 
 if (!allPassed) process.exit(1);
+
