@@ -1,10 +1,14 @@
-# TDR Sahayak
+# TDR Sahayak 🚆
 
-An AI-assisted civic-tech prototype that helps Indian railway passengers understand the appropriate next step when a journey goes wrong, before preparing a mock TDR (Ticket Deposit Receipt) / refund case.
+> **Product Principle:** *“AI interprets · Passenger corrects · Rules decide.”*  
+> **Hackathon:** Built for the *Build What Moves India* Hackathon  
+> **Live Website:** [https://tdr-sahayak.vercel.app](https://tdr-sahayak.vercel.app)
+
+An AI-assisted civic-tech prototype that helps Indian railway passengers understand the appropriate next step when a journey goes wrong, verify extracted facts, and prepare a mock TDR (Ticket Deposit Receipt) / refund case before critical statutory deadlines expire.
 
 ---
 
-## Problem
+## The Problem
 
 Every day, thousands of Indian Railway passengers face disruptions—delayed trains, cancelled services, inability to board due to platform chaos, or early train terminations. 
 
@@ -12,68 +16,91 @@ When things go wrong, passengers are often confused about:
 - Which refund rule or TDR scenario applies to them
 - What evidence or facts they need to record
 - What the critical deadlines and timing risks are
-- How to prepare their claim without making costly mistakes
+- How to avoid claim rejection due to mismatched statements
+
+**The Core Challenge:** Passengers explain disruptions in everyday language, but railway refund rules require structured legal facts. If an AI hallucinates or guesses what happened, the passenger files under the wrong clause and their refund is permanently rejected.
 
 ---
 
-## Solution
+## The Solution: 5-Stage Guided Citizen Flow
 
-**TDR Sahayak** simplifies the citizen experience through a guided 4-step workflow:
-1. **Natural Language Input**: Passengers describe what happened in plain language.
-2. **AI Interpretation**: The system reads the description, extracts structured facts, and asks only relevant follow-up questions to fill missing information.
-3. **Deterministic Decision Engine**: Pure, rule-based decision logic evaluates the facts to provide a clear, unambiguous recommendation and checklist.
-4. **Mock Case Preparation & Tracking**: Passengers review their structured facts, generate a synthetic mock case, and view a simulated case tracker.
+```
+1. Input (Describe / Speak / Upload Ticket)
+       │
+       ▼
+2. AI Interpretation & Fact Extraction
+       │
+       ▼
+3. Fact Verification & Hero Correction
+       │  (Passenger verifies/corrects facts; rules re-evaluate live)
+       ▼
+4. Deterministic Rule Decision & Auditable Trail
+       │  (Scenario A / B / C / D + Filing Window Assessment)
+       ▼
+5. Compact Card Confirmation & Mock Case Tracking
+```
+
+### Key Features
+
+1. **Multimodal Incident Intake**:
+   - **✍️ Describe**: Natural language input with real-time detection chips and prompt suggestions.
+   - **🎙️ Speak**: Multilingual speech recognition across 6 Indian languages:
+     - English (India) · हिन्दी (Hindi) · తెలుగు (Telugu) · தமிழ் (Tamil) · മലയാളം (Malayalam) · ಕನ್ನಡ (Kannada)
+   - **📄 Upload Document**: Dropzone with drag-and-drop file upload, preview, realistic sample tickets (delayed train ticket, partial journey e-ticket, station TDR slip), and simulated client-side field extraction.
+
+2. **Hero Correction Experience**:
+   - High-impact Before vs. After comparison card.
+   - Clarifying a single critical fact (e.g. *Did you travel? Yes → No*) immediately shifts the deterministic recommendation from **Scenario C** (*Partial Journey Certificate*) to **Scenario A** (*Delayed Train Full Refund Path*).
+   - Proves the core principle: **Rules decide, not hallucinations.**
+
+3. **Deterministic Rule Decision Engine**:
+   - Evaluates confirmed facts against statutory railway refund principles:
+     - **Scenario A**: Delayed train (>3 hours) — passenger did not travel.
+     - **Scenario B**: Could not board / denied entry.
+     - **Scenario C**: Partial journey disruption — deboarded midway / certificate needed.
+     - **Scenario D**: Ambiguous / insufficient facts.
+   - Provides an **Auditable Decision Trail** comparing citizen words against verified railway clauses.
+
+4. **Compact Card-Based Confirmation**:
+   - Replaced redundant long review pages with **5 compact summary cards**:
+     1. 🚉 **Journey Route**: Origin → Destination (`Hyderabad → Vijayawada`) with quick presets.
+     2. 🚶 **Travel Status**: In-place toggle (`Travelled on train` / `Did not travel`).
+     3. 🏁 **Journey Completion**: Completion status (`Incomplete — ended halfway` / `Completed`).
+     4. ⚠️ **Disruption Details**: Delay duration (`> 6 hours`, `3–6 hours`, `< 3 hours`) and incident type.
+     5. 🎟️ **Passenger & Ticket Details**: Train number, ticket/PNR reference, and scheduled date/time.
+   - **Live Rule Re-evaluation**: Tapping "Edit" on any card immediately recalculates the decision in zero milliseconds.
+   - **Collapsible Secondary Details**: Raw narrative quotes, AI confidence scores, and checklists are tucked cleanly behind *"View all details & extracted fields"*.
+
+5. **Simulated Case Tracker**:
+   - Mock tracking dashboard with status timeline, statutory deadline indicators, copyable case summary, and printable view.
 
 ---
 
-## Technology
+## Technology Stack
 
 - **Frontend**: React 18 + TypeScript + Vite
-- **Styling**: Tailwind CSS v4 (Vanilla CSS variables with custom theme tokens)
+- **Styling**: Tailwind CSS (custom rail-themed design tokens)
 - **State Management**: React state + `localStorage` for local mock case persistence
-- **AI / NLP**: OpenAI Chat Completions API (`gpt-4o-mini`) via a Vite server proxy (`/api/analyze`)
-- **Fallback Engine**: Pure deterministic keyword & pattern matcher (`src/lib/ai/fallbackParser.ts`) ensuring 100% offline & zero-API-key functionality
+- **Speech Recognition**: Web Speech API (`SpeechRecognition` / `webkitSpeechRecognition`) with fallback guidance
+- **AI / NLP**: Optional OpenAI Chat Completions API (`gpt-4o-mini`) via Vite server proxy (`/api/analyze`)
+- **Fallback Engine**: Pure deterministic keyword & regex matcher (`src/lib/ai/fallbackParser.ts`) with regional language support, ensuring **100% offline & zero-API-key functionality**
+- **Testing**: Deterministic test matrix running via Vite SSR module loader (`npm test`)
 
 ---
 
-## How AI is Used
-
-To ensure safety and reliability, AI is strictly bounded:
-
-```
-Natural Language Input
-       │
-       ▼
-AI Interpretation Layer (or Fallback Parser)
-       │  (Extracts structured facts & identifies missing items)
-       ▼
-Structured Incident Facts
-       │
-       ▼
-Deterministic Rule-Based Decision Engine
-       │  (Scenario A / B / C / D + Timing Risk Assessment)
-       ▼
-Plain-Language Recommendation & Actionable Checklist
-```
-
-- **AI handles**: Understanding messy user descriptions, extracting structured facts, and selecting relevant follow-up questions.
-- **Deterministic logic handles**: Final scenario classification, recommended actions, risk levels, and checklist generation. The AI is **never** the sole authority on claim eligibility.
-
----
-
-## What is Mocked
+## What is Mocked (Honest Prototype Boundaries)
 
 This application is a **hackathon prototype**. All data and integrations are synthetic:
 
 - **IRCTC & PNR**: No live IRCTC accounts, PNR lookups, or railway databases are accessed.
-- **Authentication**: No OTP, phone verification, or user login required.
-- **Submission & Payments**: No actual TDR forms are submitted to Indian Railways, and no payment refunds are processed.
+- **Authentication & Payments**: No OTP, phone verification, payments, or banking details required.
+- **Submission**: No actual TDR forms are submitted to Indian Railways; claims are recorded locally for demonstration.
 - **Deadlines**: Timing risk rules use prototype demo thresholds (e.g. 72-hour comfort window) for visual demonstration.
-- **Case Tracking**: Cases are stored locally in the browser's `localStorage` and simulated.
+- **Offline Safe**: Fully usable with zero network connectivity and zero paid APIs.
 
 ---
 
-## How to Run
+## How to Run & Verify
 
 ### Prerequisites
 - Node.js (v18+ recommended)
@@ -84,31 +111,38 @@ This application is a **hackathon prototype**. All data and integrations are syn
 npm install
 ```
 
-### 2. Development Mode
+### 2. Run Test Matrix
+Verify all 5 deterministic test suites (Demo Scenarios, Multilingual Prompts, Hero Correction, Sample Documents, and Compact Card In-Place Editing):
+```bash
+npm test
+```
+
+### 3. Development Mode
 Run the Vite development server (works out-of-the-box without an OpenAI key):
 ```bash
 npm run dev
 ```
-*(Optional)* To enable live OpenAI API interpretation, start the dev server with `OPENAI_API_KEY`:
+
+*(Optional)* To enable live OpenAI API interpretation, pass `OPENAI_API_KEY`:
 ```bash
 OPENAI_API_KEY=your-api-key npm run dev
 ```
 
-### 3. Production Build
+### 4. Production Build
 Type-check and bundle for production:
 ```bash
 npm run build
 ```
 
-### 4. Preview Production Build
+### 5. Preview Production Build
 ```bash
 npm run preview
 ```
 
 ---
 
-## Prototype Limitations
+## Prototype Limitations & Disclaimers
 
 - **Synthetic Data Only**: This application does not submit real TDR or refund claims.
-- **No Official Guarantee**: Recommendations and timing warnings are prototype guidance only and do not guarantee eligibility under official Indian Railways rules. Passengers must verify against the official IRCTC process before taking real-world action.
-- **No External Government API**: Purely self-contained prototype.
+- **No Official Guarantee**: Recommendations and timing warnings are prototype guidance only and do not guarantee eligibility under official Indian Railways rules.
+- **No External Government API**: Purely self-contained civic-tech prototype.
