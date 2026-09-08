@@ -53,8 +53,16 @@ export async function analyzeIncident(text: string): Promise<AnalysisResult> {
     // Merge the deterministic missing-fact computation so follow-up questions
     // stay consistent no matter which engine ran.
     const missingFacts = computeMissingFacts(result.facts);
+    const requiresClarification =
+      result.facts.incidentType === "ambiguous" || missingFacts.length > 0;
+    const statusLabel: AnalysisResult["statusLabel"] = requiresClarification
+      ? "Needs clarification"
+      : "High confidence";
+
     return {
       ...result,
+      statusLabel,
+      requiresClarification,
       missingFacts,
       suggestedQuestion: pickNextQuestion(result.facts, missingFacts),
     };

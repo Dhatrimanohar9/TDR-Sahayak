@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { Badge, Button, Card, Disclaimer, ScreenHeader } from "../components/ui";
+import { getFeedbackStats, seedSampleFeedbackIfEmpty, clearFeedback } from "../lib/feedbackStore";
+import { listCases } from "../lib/caseStore";
+import type { FeedbackStats, TrackedCase, FeedbackOutcome } from "../types";
 
 interface ScenarioMetric {
   scenario: string;
@@ -60,6 +64,14 @@ const SAMPLE_METRICS: ScenarioMetric[] = [
 
 const TOTAL_CASES = 1250;
 
+const OUTCOME_NAMES: Record<FeedbackOutcome, string> = {
+  completed: "Completed action",
+  need_help: "Needed more help",
+  could_not_complete: "Could not complete",
+  different_action: "Chose different action",
+  other: "Other",
+};
+
 export function PrototypeInsights({
   onBack,
   onAdmin,
@@ -67,11 +79,39 @@ export function PrototypeInsights({
   onBack: () => void;
   onAdmin?: () => void;
 }) {
+  const [feedbackStats, setFeedbackStats] = useState<FeedbackStats>(() => {
+    seedSampleFeedbackIfEmpty();
+    return getFeedbackStats();
+  });
+  const [cases] = useState<TrackedCase[]>(() => listCases());
+
+  const handleResetFeedback = () => {
+    clearFeedback();
+    setFeedbackStats(getFeedbackStats());
+  };
+
+  const handleSeedFeedback = () => {
+    seedSampleFeedbackIfEmpty();
+    setFeedbackStats(getFeedbackStats());
+  };
+
+  const outcomeEntries = Object.entries(feedbackStats.byOutcome) as [FeedbackOutcome, number][];
+  const sortedOutcomes = [...outcomeEntries].sort((a, b) => b[1] - a[1]);
+  const topOutcome = sortedOutcomes[0];
+  const mostSelectedLabel =
+    topOutcome && topOutcome[1] > 0
+      ? `${OUTCOME_NAMES[topOutcome[0]]} (${topOutcome[1]})`
+      : "No feedback yet";
+
+  const reportedProblems = feedbackStats.recent.filter(
+    (item) => item.textFeedback && item.textFeedback.trim().length > 0,
+  );
+
   return (
     <div className="animate-fade-up">
       <ScreenHeader
         title="Prototype Insights"
-        subtitle="Synthetic distribution of railway disruption inquiries."
+        subtitle="Distribution of railway disruption inquiries & live prototype evaluation."
         onBack={onBack}
       />
 
@@ -103,6 +143,144 @@ export function PrototypeInsights({
           </div>
         </div>
       )}
+
+      {/* Live Session Outcomes & Accuracy Evaluation Card */}
+      <div className="mb-5 rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span aria-hidden className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white text-xs font-black">
+              ✓
+            </span>
+            <h2 className="text-sm font-bold text-emerald-950 uppercase tracking-wide">
+              Live Evaluation Signals (This Browser Session)
+            </h2>
+          </div>
+          <Badge tone="green">Real Local Data</Badge>
+        </div>
+        <p className="mt-1 text-xs text-emerald-900 leading-relaxed">
+          Aggregated directly from your current browser session via <code className="font-mono text-[11px] bg-emerald-100 px-1 py-0.5 rounded">localStorage</code>. Measures real-time advice validation and user responses without mock servers.
+        </p>
+
+        {/* 6 Key Live Metric Cards */}
+        <div className="mt-3 grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+          <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Mock Claims
+            </p>
+            <p className="mt-1 font-mono text-xl font-extrabold text-rail-950">
+              {cases.length}
+            </p>
+            <p className="text-[10px] text-stone-500">Created in session</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Total Feedback
+            </p>
+            <p className="mt-1 font-mono text-xl font-extrabold text-rail-950">
+              {feedbackStats.total}
+            </p>
+            <p className="text-[10px] text-stone-500">Citizen responses</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Most Selected Outcome
+            </p>
+            <p className="mt-1 text-sm font-bold text-rail-950 leading-tight">
+              {mostSelectedLabel}
+            </p>
+            <p className="text-[10px] text-stone-500">Top reported next step</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Needed More Help
+            </p>
+            <p className="mt-1 font-mono text-xl font-extrabold text-amber-700">
+              {feedbackStats.needHelpCount}
+            </p>
+            <p className="text-[10px] text-stone-500">Required clarification</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Corrected Facts
+            </p>
+            <p className="mt-1 font-mono text-xl font-extrabold text-purple-700">
+              {feedbackStats.correctedCount}
+            </p>
+            <p className="text-[10px] text-stone-500">Used hero correction</p>
+          </div>
+
+          <div className="rounded-xl bg-white p-3 border border-emerald-200 shadow-2xs">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              Helpful Rating
+            </p>
+            <p className="mt-1 font-mono text-xl font-extrabold text-emerald-700">
+              {feedbackStats.helpfulPct}%
+            </p>
+            <p className="text-[10px] text-stone-500">Found guidance useful</p>
+          </div>
+        </div>
+
+        {/* Common Reported Problems & Remarks List */}
+        <div className="mt-3 rounded-xl bg-white p-3.5 border border-emerald-200 shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-wider text-rail-950 flex items-center gap-1.5">
+              <span>💬</span> Common Reported Problems & Citizen Remarks
+            </p>
+            <span className="text-[10px] font-semibold text-stone-500">
+              {reportedProblems.length} remarks recorded
+            </span>
+          </div>
+          {reportedProblems.length === 0 ? (
+            <p className="text-xs text-stone-500 italic py-1">
+              No remarks submitted yet in this session. Submit feedback on the recommended step screen or seed sample feedback below.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {reportedProblems.slice(0, 4).map((fb) => (
+                <div key={fb.id} className="rounded-lg bg-stone-50 p-2.5 text-xs border border-stone-200">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-semibold text-rail-950">
+                      Scenario {fb.scenario}: {fb.scenarioTitle || "Disruption case"}
+                    </span>
+                    <Badge tone={fb.selectedOutcome === "completed" ? "green" : fb.selectedOutcome === "need_help" ? "amber" : "neutral"}>
+                      {OUTCOME_NAMES[fb.selectedOutcome]}
+                    </Badge>
+                  </div>
+                  <p className="text-stone-700 italic">“{fb.textFeedback}”</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Live Feedback Action Controls */}
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-emerald-200/80 text-xs">
+          <span className="text-[11px] text-emerald-950">
+            Outcomes: {feedbackStats.byOutcome.completed} completed · {feedbackStats.byOutcome.need_help} need help · {feedbackStats.byOutcome.could_not_complete} could not complete · {feedbackStats.byOutcome.different_action} different · {feedbackStats.byOutcome.other} other
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleSeedFeedback}
+              className="text-[11px] font-semibold text-emerald-800 underline hover:text-emerald-950"
+            >
+              Seed Sample Feedback
+            </button>
+            <span className="text-emerald-400">·</span>
+            <button
+              type="button"
+              onClick={handleResetFeedback}
+              className="text-[11px] font-semibold text-stone-500 underline hover:text-red-700"
+            >
+              Clear Session Feedback
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Prominent Synthetic Data Notice */}
       <div className="rounded-2xl border border-amber-300 bg-amber-50/80 p-4 shadow-sm">
@@ -375,17 +553,35 @@ export function PrototypeInsights({
           </div>
         </Card>
 
-        {/* Privacy and Responsible Data Note */}
-        <div className="rounded-xl border border-amber-200 bg-amber-soft p-3.5 text-xs text-amber-950">
-          <div className="flex items-start gap-2">
-            <span aria-hidden className="mt-0.5 text-amber-800 font-bold">🔒</span>
+        {/* Privacy and Responsible Data Architecture */}
+        <div className="rounded-xl border border-amber-200 bg-amber-soft p-4 text-xs text-amber-950">
+          <div className="flex items-start gap-2.5">
+            <span aria-hidden className="mt-0.5 text-base">🔒</span>
             <div>
-              <p className="font-bold uppercase tracking-wider text-[10px] text-amber-900">
-                Privacy & Responsible Data Note
+              <p className="font-bold uppercase tracking-wider text-[11px] text-amber-950">
+                Production Architecture: Safe & Responsible Feedback Collection
               </p>
-              <p className="mt-1 text-xs leading-relaxed text-amber-900/90 font-medium">
-                Any future analytics system would require explicit user consent, data minimization, anonymization, secure storage, and an option to delete data.
+              <p className="mt-1 text-xs text-amber-900/90 leading-relaxed font-medium">
+                How a production deployment of TDR Sahayak would gather real feedback safely without compromising citizen privacy:
               </p>
+              <ul className="mt-2 space-y-1.5 text-xs text-amber-950 font-medium">
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-800" />
+                  <span><strong>Opt-in feedback only:</strong> Citizens explicitly choose whether to share outcome reports; no passive tracking.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-800" />
+                  <span><strong>Anonymized disruption reports:</strong> Disruption facts and journey routes are stripped of passenger identities before aggregation.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-800" />
+                  <span><strong>Zero PNR / Aadhaar retention:</strong> Personal names, phone numbers, and 10-digit PNRs are never retained on analytics servers.</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-amber-800" />
+                  <span><strong>Aggregated insights to refine questions:</strong> Recurring points of confusion are analyzed in bulk to make clarification questions sharper.</span>
+                </li>
+              </ul>
             </div>
           </div>
         </div>

@@ -21,7 +21,6 @@ const delayPatterns: { re: RegExp; duration: IncidentFacts["delayDuration"] }[] 
 const disruptionPhrases: { re: RegExp; label: string }[] = [
   { re: /cancel+ed|cancel+lation|cancel ho gayi|cancel ho gaya|radd ho gayi|రద్దయింది|రద్దు|ரத்து|റദ്ദാക്കി|ರದ್ದು/i, label: "Train cancelled" },
   { re: /terminat+ed|short terminat|divert|aadhe raste|beech mein|beech me|बीच में रुक|మధ్యలోనే|ఆగిపోయింది|పాதியிலேயே|பாதி தூரம்|പകുതി ദൂരം|അರ್ಧ ದಾರಿ|ಮಧ್ಯದಲ್ಲೇ/i, label: "Train terminated early or disrupted midway" },
-  { re: /missed.{0,20}(connection|train)|train miss ho gayi|train chhut gayi|miss ho gayi|రైలు తప్పిపోయింది|ரயில் தவறவிட்டது|ട്രെയിൻ നഷ്ടപ്പെട്ടു|ರೈಲು ತಪ್ಪಿಹೋಯಿತು/i, label: "Missed train" },
   { re: /could not board|couldn.?t board|denied (boarding|entry)|not allowed to board|platform.{0,30}(crowd|block|disorder)|chadh nahi paya|ఎక్కలేకపోయాను|ஏற முடியவில்லை|കയറാൻ കഴിഞ്ഞില്ല|ಹತ್ತಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ/i, label: "Could not board" },
   { re: /station (pe|par)? late|late pahuch|der se pahuch|traffic me/i, label: "Passenger arrived late at station" },
   { re: /strike|blockade|protest|signal (failure|problem)|derail/i, label: "Service disruption" },
@@ -31,30 +30,82 @@ const disruptionPhrases: { re: RegExp; label: string }[] = [
 const dateMatch = /\b(\d{1,2}(st|nd|rd|th)?[\s-]+(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*([\s'-]+\d{2,4})?)\b/i;
 const numericDateMatch = /\b(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})\b/;
 
-function unknownWhenUnclear(value: boolean | undefined | null): boolean | "unknown" {
-  return typeof value === "boolean" ? value : "unknown";
+interface EvidenceResult {
+  value: boolean | "unknown";
+  hasConflict: boolean;
+}
+
+function resolveEvidence(positive: boolean, negative: boolean): EvidenceResult {
+  if (positive && negative) {
+    return { value: "unknown", hasConflict: true };
+  }
+  if (positive) return { value: true, hasConflict: false };
+  if (negative) return { value: false, hasConflict: false };
+  return { value: "unknown", hasConflict: false };
 }
 
 export function fallbackAnalyze(text: string): AnalysisResult {
   const t = text.toLowerCase();
 
-  // Explicit Hinglish, regional languages & English patterns for travel status
-  const travelledYes = /\b(i (travel+ed|did travel|took the train|boarded)|my journey (was|is) (completed)|completed my (journey|trip)|safarn? poora|part of the route|travel kiya|safar kiya)\b|सफर तय किया|सफर किया|ప్రయాణించాను|సగం దూరం|பயணம் செய்தேன்|பாதி தூரம்|യാത്ര ചെയ്തു|പകുതി ദൂരം|ಪ್ರಯಾಣಿಸಿದೆ|ಅರ್ಧ ದಾರಿ/i.test(t);
-  const travelledNo = /\b(did not travel|didn.?t travel|not travel+ing|decided not to|no longer travel|cancelled my (trip|plan)|did not board|didn.?t board|travel nahi kiya|travel nahi ki|journey nahi ki|journey nahi kiya|safar nahi kiya|nahi travel kiya|nahi gaya)\b|यात्रा नहीं की|ప్రయాణించలేదు|పయనం చేయలేదు|பயணம் செய்யவில்லை|യാത്ര ചെയ്തില്ല|ಪ್ರಯಾಣ ಮಾಡಲಿಲ್ಲ/i.test(t);
+  // 1. Independent Boarding Signals (Positive vs Negative)
+  const boardedPositive = /\b(i\s+(?:boarded|got\s+on|was\s+on\s+board|took|sat\s+in)|managed\s+to\s+board|still\s+boarded|train\s+me(?:in)?\s+chadh|chadh\s+gaya|chadh\s+gayi|chadh\s+gaye|board\s+kiya|board\s+kar\s+liya)\b|ఎక్కాను|ஏறினேன்|കയറി|ಹತ್ತಿದೆ/i.test(t);
+  const boardedNegative = /\b(could\s+not\s+board|couldn['’]?t\s+board|not\s+able\s+to\s+board|unable\s+to\s+board|denied\s+boarding|was\s+not\s+allowed\s+to\s+board|missed\s+the\s+train|train\s+miss\s+ho\s+gayi|train\s+chhut\s+gayi|miss\s+ho\s+gayi|chadh\s+nahi\s+paya|nahi\s+chadh\s+paya|chadh\s+nahi\s+paye|boarding\s+nahi\s+mili)\b|ఎక్కలేకపోయాను|ஏற\s*முடியவில்லை|കയറാൻ\s*കഴിഞ്ഞില്ല|ಹತ್ತಲು\s*ಸಾಧ್ಯವಾಗಲಿಲ್ಲ/i.test(t);
+  const boardingEvidence = resolveEvidence(boardedPositive, boardedNegative);
 
-  // Distinguish passenger arriving late vs train delay
-  const passengerLateAtStation = /\b(station (pe|par)? late|late pahuch|der se pahuch|traffic me(in)?)\b/i.test(t);
-  const mentionsTrainDelay = /\b(train (bahut )?late|bahut late|kaafi late|train der se|train was late|train delayed|delay+ed?|behind schedule)\b|लेट|आలస్య|ఆలస్యమైంది|தாமத|தாமதமானது|വൈകി|തಡ/i.test(t) || (!passengerLateAtStation && /\b(der se|late)\b/i.test(t));
+  // 2. Independent Travelled Signals (Positive vs Negative)
+  const travelledPositive = /\b(i\s+(?:travel+ed|did\s+travel|went|undertook\s+the\s+journey)|travel\s+kiya|safar\s+kiya|safar\s+taya?\s+kiya|safar\s+poora|pura\s+safar|poora\s+safar|completed\s+my\s+journey|completed\s+the\s+trip|part\s+of\s+the\s+route|travelled\s+part|travelled\s+fully)\b|सफर\s*किया|सफर\s*तय\s*किया|यात्रा\s*की|ప్రయాణించాను|సగం\s*దూరం|பயணம்\s*செய்தேன்|பாதி\s*தூரம்|യാത്ര\s*ചെയ്തു|പകുതി\s*ദൂരം|ಪ್ರಯಾಣಿಸಿದೆ|ಅರ್ಧ\s*ದಾರಿ/i.test(t);
+  const travelledNegative = /\b(did\s+not\s+travel|didn['’]?t\s+travel|not\s+travel+ing|decided\s+not\s+to\s+travel|decided\s+not\s+to|cancelled\s+my\s+(?:trip|plan|ticket)|did\s+not\s+go|didn['’]?t\s+go|travel\s+nahi\s+kiya|travel\s+nahi\s+ki|journey\s+nahi\s+ki|journey\s+nahi\s+kiya|safar\s+nahi\s+kiya|nahi\s+travel\s+kiya|nahi\s+gaya|nahi\s+gaye)\b|यात्रा\s*नहीं\s*की|ప్రయాణించలేదు|పయనం\s*చేయలేదు|பயணம்\s*செய்யவில்லை|യാത്ര\s*ചെയ്തില്ല|ಪ್ರಯಾಣ\s*ಮಾಡಲಿಲ್ಲ/i.test(t);
+  const travelEvidence = resolveEvidence(travelledPositive, travelledNegative);
 
-  // Missed train or denied boarding
-  const boardedNo = /(could not board|couldn.?t board|not able to board|missed the train|denied boarding|was not allowed|train miss ho gayi|train chhut gayi|miss ho gayi|chadh nahi paya|boarding nahi mili|ఎక్కలేకపోయాను|ஏற முடியவில்லை|കയറാൻ കഴിഞ്ഞില്ല|ಹತ್ತಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ)/i.test(t) || (passengerLateAtStation && /\b(miss|chhut|pahuch)\b/i.test(t));
-  const boardedYes = /\b(i (boarded|got on|was on board)|managed to board|train me(in)? chadh gaya|train me(in)? chadh gayi|train me(in)? chadh gaye|chadh gaya tha|chadh gayi thi|board kiya)\b|ఎక్కాను|ஏறினேன்|കയറി|ಹತ್ತಿದೆ/i.test(t);
+  // 3. Independent Completion Signals (Positive vs Negative)
+  const completedPositive = /\b(completed\s+my\s+(?:journey|trip)|completed\s+the\s+(?:journey|trip)|reached\s+(?:my\s+)?destination|made\s+it\s+to\s+(?:my\s+)?destination|safely\s+reached|journey\s+was\s+completed|travelled\s+fully|safar\s+poora|poora\s+safar|pura\s+safar|safar\s+complete|destination\s+pahunch|destination\s+pahuch|fine\s+at\s+destination)\b|यात्रा\s*पूरी\s*हो\s*गई|पूरी\s*यात्रा|ప్రయాణం\s*పూర్తయింది|பயணம்\s*முடிந்தது|യാത്ര\s*പൂർത്തിയായി|ಪ್ರಯಾಣ\s*ಪೂರ್ಣಗೊಂಡಿತು/i.test(t);
+  const completedNegative = /(halfway|part\s+of\s+the\s+route|partway|midway|could\s+not\s+complete|didn['’]?t\s+complete|not\s+complete|journey.*incomplet|short\s+terminat|terminated\s+early|dropped\s+at|got\s+off\s+at|deboarded|aadhe\s+raste|beech\s+mein|beech\s+me|aadha\s+rasta|journey\s+complete\s+nahi|poori\s+nahi\s+hui|puri\s+nahi\s+hui|beech\s+me\s+chhod\s+diya)\b|आधा\s*सफर|बीच\s*में\s*रुक|पूरी\s*नहीं\s*हो\s*सकी|పూర్తి\s*కాలేదు|ముழு\s*பயணம்\s*செய்ய\s*முடியவில்லை|പൂർത്തിയാക്കാൻ\s*സാധിച്ചില്ല|ಪೂರ್ಣಗೊಳಿಸಲು\s*ಸಾಧ್ಯವಾಗಲಿಲ್ಲ/i.test(t);
+  const completionEvidence = resolveEvidence(completedPositive, completedNegative);
 
-  // Partial journey vs completed
-  const partialMatches = /(halfway|part of the route|partway|midway|could not complete|didn.?t complete|not complete|journey.*incomplet|short terminat|terminated early|dropped at|got off at|deboarded en[- ]?route|aadhe raste|beech mein|beech me|aadha rasta|journey complete nahi|poori nahi hui|beech me chhod diya|आधा सफर|बीच में रुक|సగం దూరం|మధ్యలోనే|ఆగిపోయింది|పాதியிலேயே|பாதி தூரம்|പകുതി ദൂരം|ಅರ್ಧ ದಾರಿ|ಮಧ್ಯದಲ್ಲೇ)/i.test(t);
-  const completedYes = /\b(completed my (journey|trip)|reached (my )?destination|journey was completed|travelled fully|safar poora|destination pahunch)\b|यात्रा पूरी हो गई|ప్రయాణం పూర్తయింది|பயணம் முடிந்தது|യാത്ര പൂർത്തിയായി|ಪ್ರಯಾಣ ಪೂರ್ಣಗೊಂಡಿತು/i.test(t);
-  const completedNo = partialMatches || /\b(could not complete|didn.?t complete|journey.*not complete|incomplete journey|complete nahi ki|complete nahi hui)\b|पूरी नहीं हो सकी|పూర్తి కాలేదు|முழு பயணம் செய்ய முடியவில்லை|പൂർത്തിയാക്കാൻ സാധിച്ചില്ല|ಪೂರ್ಣಗೊಳಿಸಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ/i.test(t);
+  // Track whether any contradiction exists
+  const hasConflict = boardingEvidence.hasConflict || travelEvidence.hasConflict || completionEvidence.hasConflict;
 
+  // Passenger delay vs train delay
+  const passengerLateAtStation = /\b(station\s+(?:pe|par)?\s*late|late\s+pahuch|der\s+se\s+pahuch|traffic\s+me(?:in)?)\b/i.test(t);
+  const mentionsTrainDelay = /\b(train\s+(?:bahut\s+)?late|bahut\s+late|kaafi\s+late|train\s+der\s+se|train\s+was\s+late|train\s+delayed|delay+ed?|behind\s+schedule)\b|लेट|ఆలస్య|ఆలస్యమైంది|தாமத|தாமதமானது|വൈകി|ತಡ/i.test(t) || (!passengerLateAtStation && /\b(der\s+se|late)\b/i.test(t));
+
+  // Ticket cancellation signals
+  const cancelledYes = /\b(cancel+ed?\s+(?:my|the)\s+(?:ticket|booking)|ticket\s+(?:was\s+)?cancel+ed?|filed?\s+(?:a\s+)?tdr|cancel+ed?\s+before|cancel\s+ho\s+gayi|cancel\s+ho\s+gaya|train\s+cancel|train\s+radd|radd\s+ho\s+gayi)\b/i.test(t);
+  const cancelledNo = /\b(did\s+not\s+cancel|didn['’]?t\s+cancel|no\s+cancellation|cancel\s+nahi\s+kiya|cancel\s+nahi\s+karwaya)\b/i.test(t);
+
+  // Derive consolidated facts without guessing unknown status
+  let passengerBoarded: boolean | "unknown" = boardingEvidence.value;
+  let passengerTravelled: boolean | "unknown" = travelEvidence.value;
+  let journeyCompleted: boolean | "unknown" = completionEvidence.value;
+  let partialJourney: boolean | "unknown" = "unknown";
+
+  // Logical inferences between signals
+  if (completedPositive && !completionEvidence.hasConflict) {
+    journeyCompleted = true;
+    partialJourney = false;
+    passengerBoarded = true;
+    passengerTravelled = true;
+  } else if (completedNegative && !completionEvidence.hasConflict) {
+    journeyCompleted = false;
+    if (passengerBoarded === true || passengerTravelled === true || completedNegative) {
+      partialJourney = true;
+      passengerTravelled = true;
+      passengerBoarded = true;
+    }
+  }
+
+  // Cross-inference between boarded and travelled
+  if (passengerBoarded === false && passengerTravelled === "unknown") {
+    passengerTravelled = false;
+  }
+  if (passengerTravelled === false && passengerBoarded === "unknown") {
+    passengerBoarded = false;
+  }
+  if (passengerBoarded === true && passengerTravelled === "unknown") {
+    passengerTravelled = true;
+  }
+
+  // Delay duration
   let delayDuration: IncidentFacts["delayDuration"] = "unsure";
   for (const { re, duration } of delayPatterns) {
     if (re.test(t)) {
@@ -63,6 +114,7 @@ export function fallbackAnalyze(text: string): AnalysisResult {
     }
   }
 
+  // Disruption label
   let disruptionMentioned: string | null = null;
   for (const { re, label } of disruptionPhrases) {
     if (re.test(t)) {
@@ -70,14 +122,14 @@ export function fallbackAnalyze(text: string): AnalysisResult {
       break;
     }
   }
-  if (partialMatches && !disruptionMentioned) {
+  if (completedNegative && !disruptionMentioned) {
     disruptionMentioned = "Disrupted midway / partial route";
   }
 
+  // Journey date and identifiers
   const dateM = text.match(dateMatch) || text.match(numericDateMatch);
   const journeyDateMentioned = dateM ? dateM[0] : null;
 
-  // Station and Train Number extraction
   const trainM = text.match(/(?:train\s*(?:no\.?|number)?\s*|#)?\b([1-2]\d{4})\b/i);
   const trainNumber = trainM ? trainM[1] : null;
 
@@ -94,46 +146,33 @@ export function fallbackAnalyze(text: string): AnalysisResult {
     fromStation = fromStation.replace(/\s+(to|on|with|by|train|was|is|at|in|via)$/i, "").trim();
   }
 
-  const cancelledYes = /\b(cancel+ed? (my|the) (ticket|booking)|ticket (was )?cancel+ed?|filed? (a )?tdr|cancel+ed? before|cancel ho gayi|cancel ho gaya|train cancel|train radd|radd ho gayi)\b/i.test(t);
-  const cancelledNo = /\b(did not cancel|didn.?t cancel|no cancellation|cancel nahi kiya|cancel nahi karwaya)\b/i.test(t);
-
-  const passengerBoarded = unknownWhenUnclear(
-    boardedNo ? false : (boardedYes || travelledYes || (partialMatches && completedNo)) ? true : undefined,
-  );
-  const passengerTravelled = unknownWhenUnclear(
-    travelledYes ? true : (travelledNo || boardedNo) ? false : (passengerBoarded === true || (partialMatches && completedNo)) ? true : undefined,
-  );
-
-  let journeyCompleted: boolean | "unknown" = "unknown";
-  let partialJourney: boolean | "unknown" = "unknown";
-
-  if (completedYes && !completedNo) {
-    journeyCompleted = true;
-    partialJourney = false;
-  } else if (completedNo) {
-    journeyCompleted = false;
-    partialJourney = (passengerTravelled === true || passengerBoarded === true || partialMatches) ? true : "unknown";
-  }
-
-  // Classify the incident deterministically
+  // Classify Incident Type Deterministically
+  // CRITICAL RULE: Never guess eligibility if travel status is unknown.
   let incidentType: IncidentFacts["incidentType"];
-  if (partialJourney === true || (passengerBoarded === true && completedNo)) {
+
+  if (hasConflict) {
+    incidentType = "ambiguous";
+  } else if (partialJourney === true || (passengerBoarded === true && journeyCompleted === false)) {
     incidentType = "partial_journey";
-  } else if (boardedNo) {
+  } else if (boardedNegative || (passengerBoarded === false && disruptionMentioned === "Could not board")) {
     incidentType = "could_not_board";
-  } else if (cancelledYes && (travelledNo || !boardedYes)) {
-    incidentType = "delay_not_travelled";
-  } else if (mentionsTrainDelay && (travelledNo || !boardedYes)) {
-    incidentType = "delay_not_travelled";
-  } else if (travelledYes && completedYes) {
+  } else if (passengerTravelled === true && journeyCompleted === true) {
     incidentType = "travelled_completed";
-  } else if (travelledYes || (boardedYes && !boardedNo)) {
+  } else if (passengerTravelled === true && journeyCompleted === "unknown") {
     incidentType = "travelled_disrupted";
-  } else if (disruptionMentioned && boardedNo) {
-    incidentType = "could_not_board";
+  } else if (passengerTravelled === false) {
+    if (disruptionMentioned === "Could not board") {
+      incidentType = "could_not_board";
+    } else {
+      incidentType = "delay_not_travelled";
+    }
   } else {
+    // When passengerTravelled is unknown, NEVER guess delay_not_travelled!
     incidentType = "ambiguous";
   }
+
+  const cancelledBeforeDeparture: boolean | "unknown" =
+    cancelledYes ? true : cancelledNo ? false : "unknown";
 
   const facts: IncidentFacts = {
     incidentType,
@@ -142,9 +181,7 @@ export function fallbackAnalyze(text: string): AnalysisResult {
     journeyCompleted,
     partialJourney,
     delayDuration: mentionsTrainDelay ? delayDuration : "unsure",
-    cancelledBeforeDeparture: unknownWhenUnclear(
-      cancelledYes ? true : cancelledNo ? false : undefined,
-    ),
+    cancelledBeforeDeparture,
     disruptionMentioned,
     journeyDateMentioned,
     fromStation,
@@ -158,9 +195,22 @@ export function fallbackAnalyze(text: string): AnalysisResult {
   const suggestedQuestion = pickNextQuestion(facts, missingFacts);
   const confidence = computeConfidence(facts, missingFacts.length);
 
+  let statusLabel: AnalysisResult["statusLabel"] = "High confidence";
+  let requiresClarification = false;
+
+  if (hasConflict) {
+    statusLabel = "Conflicting evidence";
+    requiresClarification = true;
+  } else if (facts.incidentType === "ambiguous" || missingFacts.length > 0) {
+    statusLabel = "Needs clarification";
+    requiresClarification = true;
+  }
+
   return {
     facts,
     confidence,
+    statusLabel,
+    requiresClarification,
     missingFacts,
     suggestedQuestion,
     summary: buildSummary(facts),
@@ -178,20 +228,23 @@ export function computeMissingFacts(facts: IncidentFacts): MissingFactKey[] {
   ) {
     missing.push("journeyCompleted");
   }
-  if (facts.incidentType !== "ambiguous" && facts.delayDuration === "unsure")
+  if (facts.incidentType !== "ambiguous" && facts.delayDuration === "unsure") {
     missing.push("delayDuration");
+  }
   if (
     facts.passengerTravelled === false &&
     facts.cancelledBeforeDeparture === "unknown"
-  )
+  ) {
     missing.push("cancelledBeforeDeparture");
+  }
   if (
     (facts.incidentType === "travelled_disrupted" ||
       facts.incidentType === "partial_journey" ||
       facts.incidentType === "could_not_board") &&
     !facts.disruptionMentioned
-  )
+  ) {
     missing.push("disruptionType");
+  }
   if (!facts.journeyDateMentioned) missing.push("journeyDate");
   return missing;
 }
@@ -223,15 +276,15 @@ function buildSummary(facts: IncidentFacts): string {
     case "delay_not_travelled":
       return "It sounds like your train was delayed and you did not make the journey.";
     case "could_not_board":
-      return "It sounds like you were unable to complete your journey as planned.";
+      return "It sounds like you were unable to board the train or complete boarding.";
     case "partial_journey":
       return "It sounds like you boarded the train, but your journey was disrupted before reaching your destination.";
     case "travelled_completed":
-      return "It sounds like you completed your journey to your destination, but faced disruption along the way.";
+      return "It sounds like you completed your journey to your destination despite delay or disruption.";
     case "travelled_disrupted":
       return "It sounds like you travelled but the journey did not go as planned.";
     default:
-      return "We understood part of your description, but a few details are unclear.";
+      return "We understood part of your description, but your travel status needs confirmation.";
   }
 }
 
@@ -245,7 +298,7 @@ export function extractKeywordChips(text: string): KeywordChip[] {
   const t = text.toLowerCase();
   const chips: KeywordChip[] = [];
 
-  const mentionsDelay = /\b(delay+ed?|late|behind schedule|held up|waiting|der se)\b|लेट|आలస్య|ఆలస్యమైంది|தாமத|தாமதமானது|വൈകി|തಡ/i.test(t);
+  const mentionsDelay = /\b(delay+ed?|late|behind\s+schedule|held\s+up|waiting|der\s+se)\b|लेट|ఆలస్య|ఆలస్యమైంది|தாமத|தாமதமானது|വൈകി|തಡ/i.test(t);
   if (mentionsDelay) {
     let delayFound = false;
     for (const { re, duration } of delayPatterns) {
@@ -263,7 +316,7 @@ export function extractKeywordChips(text: string): KeywordChip[] {
     }
   }
 
-  const partialMatches = /(halfway|part of the route|partway|midway|could not complete|didn.?t complete|not complete|journey.*incomplet|short terminat|terminated early|dropped at|got off at|deboarded en[- ]?route|aadhe raste|beech raste|aadha rasta|journey complete nahi|poori nahi hui|beech me chhod diya|आधा सफर|बीच में रुक|సగం దూరం|మధ్యలోనే|పాதியிலேயே|பாதி தூரம்|പകുതി ദൂരം|അರ್ಧ ದಾರಿ|ಮಧ್ಯದಲ್ಲೇ)/i.test(t);
+  const partialMatches = /(halfway|part\s+of\s+the\s+route|partway|midway|could\s+not\s+complete|didn['’]?t\s+complete|not\s+complete|journey.*incomplet|short\s+terminat|terminated\s+early|dropped\s+at|got\s+off\s+at|deboarded|aadhe\s+raste|beech\s+mein|beech\s+me|aadha\s+rasta|journey\s+complete\s+nahi|poori\s+nahi\s+hui|puri\s+nahi\s+hui|beech\s+me\s+chhod\s+diya)\b|आधा\s*सफर|बीच\s*में\s*रुक|पूरी\s*नहीं\s*हो\s*सकी|పూర్తి\s*కాలేదు|ముழு\s*பயணம்\s*செய்ய\s*முடியவில்லை|പൂർത്തിയാക്കാൻ\s*സാധിച്ചില്ല|ಪೂರ್ಣಗೊಳಿಸಲು\s*ಸಾಧ್ಯವಾಗಲಿಲ್ಲ/i.test(t);
   if (partialMatches) {
     chips.push({ label: "Partial journey (disrupted midway)", tone: "green" });
   }
@@ -275,17 +328,26 @@ export function extractKeywordChips(text: string): KeywordChip[] {
     }
   }
 
-  const travelledYes = /\b(i (travel+ed|did travel|took the train|boarded)|my journey (was|is) (completed)|completed my (journey|trip)|safarn? poora|part of the route)\b|सफर तय किया|ప్రయాణించాను|సగం దూరం|பயணம் செய்தேன்|பாதி தூரம்|യാത്ര ചെയ്തു|പകുതി ദൂരം|ಪ್ರಯಾಣಿಸಿದೆ|ಅರ್ಧ ದಾರಿ/i.test(t);
-  const travelledNo = /\b(did not travel|didn.?t travel|not travel+ing|decided not to|no longer travel|cancelled my (trip|plan)|did not board|didn.?t board|safar nahi kiya)\b|यात्रा नहीं की|ప్రయాణించలేదు|பயணம் செய்யவில்லை|യാത്ര ചെയ്തില്ല|ಪ್ರಯಾಣ ಮಾಡಲಿಲ್ಲ/i.test(t);
-  
-  if (travelledYes) chips.push({ label: "Travelled", tone: "green" });
-  else if (travelledNo) chips.push({ label: "Did not travel", tone: "green" });
+  const completedYes = /\b(completed\s+my\s+(?:journey|trip)|reached\s+(?:my\s+)?destination|made\s+it\s+to\s+(?:my\s+)?destination|safely\s+reached|safar\s+poora|poora\s+safar|pura\s+safar|safar\s+complete)\b|यात्रा\s*पूरी|ప్రయాణం\s*పూర్తయింది|பயணம்\s*முடிந்தது|യാത്ര\s*പൂർത്തിയായി|ಪ್ರಯಾಣ\s*ಪೂರ್ಣಗೊಂಡಿತು/i.test(t);
+  const travelledYes = /\b(i\s+(?:travel+ed|did\s+travel|took\s+the\s+train|boarded)|safar\s+kiya|travel\s+kiya)\b|सफर\s*किया|ప్రయాణించాను|பயணம்\s*செய்தேன்|യാത്ര\s*ചെയ്തു|ಪ್ರಯಾಣಿಸಿದೆ/i.test(t);
+  const travelledNo = /\b(did\s+not\s+travel|didn['’]?t\s+travel|not\s+travel+ing|decided\s+not\s+to|cancelled\s+my\s+(?:trip|plan)|did\s+not\s+board|didn['’]?t\s+board|safar\s+nahi\s+kiya|travel\s+nahi\s+kiya)\b|यात्रा\s*नहीं\s*की|ప్రయాణించలేదు|பயணம்\s*செய்யவில்லை|യാത്ര\s*ചെയ്തില്ല|ಪ್ರಯಾಣ\s*ಮಾಡಲಿಲ್ಲ/i.test(t);
 
-  const boardedNo = /(could not board|couldn.?t board|not able to board|missed the train|denied boarding|was not allowed|chadh nahi paya|ఎక్కలేకపోయాను|ஏற முடியவில்லை|കയറാൻ കഴിഞ്ഞില്ല|ಹತ್ತಲು ಸಾಧ್ಯವಾಗಲಿಲ್ಲ)/i.test(t);
-  const boardedYes = /\b(i (boarded|got on|was on board)|managed to board|train me(in)? chadh|chadh gaya|chadh gaye|board kiya)\b|ఎక్కాను|ஏறினேன்|കയറി|ಹತ್ತಿದೆ/i.test(t);
-  
-  if (boardedNo && !chips.some(c => c.label === "Could not board")) chips.push({ label: "Could not board", tone: "green" });
-  else if (boardedYes && !chips.some(c => c.label === "Boarded")) chips.push({ label: "Boarded train", tone: "green" });
+  if (completedYes && travelledYes) {
+    chips.push({ label: "Completed journey to destination", tone: "green" });
+  } else if (travelledYes && !partialMatches) {
+    chips.push({ label: "Travelled", tone: "green" });
+  } else if (travelledNo) {
+    chips.push({ label: "Did not travel", tone: "green" });
+  }
+
+  const boardedNo = /(could\s+not\s+board|couldn['’]?t\s+board|not\s+able\s+to\s+board|missed\s+the\s+train|denied\s+boarding|was\s+not\s+allowed|chadh\s+nahi\s+paya|nahi\s+chadh\s+paya|ఎక్కలేకపోయాను|ஏற\s*முடியவில்லை|കയറാൻ\s*ಕഴിഞ്ഞില്ല|ಹತ್ತಲು\s*ಸಾಧ್ಯವಾಗಲಿಲ್ಲ)/i.test(t);
+  const boardedYes = /\b(i\s+(?:boarded|got\s+on|was\s+on\s+board)|managed\s+to\s+board|still\s+boarded|train\s+me(?:in)?\s+chadh|chadh\s+gaya|chadh\s+gaye|board\s+kiya)\b|ఎక్కాను|ஏறினேன்|കയറി|ಹತ್ತಿದೆ/i.test(t);
+
+  if (boardedNo && !chips.some((c) => c.label === "Could not board")) {
+    chips.push({ label: "Could not board", tone: "green" });
+  } else if (boardedYes && !chips.some((c) => c.label === "Boarded")) {
+    chips.push({ label: "Boarded train", tone: "green" });
+  }
 
   const dateM = text.match(dateMatch);
   if (dateM) chips.push({ label: dateM[0], tone: "green" });

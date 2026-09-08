@@ -10,15 +10,18 @@ RULES & HINGLISH UNDERSTANDING:
 1. CODE-MIXED EXAMPLES:
    - "Train bahut late thi, isliye maine travel nahi kiya" -> incidentType: "delay_not_travelled", passengerTravelled: false, delayDuration: "3to6h", disruptionMentioned: "Train delayed".
    - "Main train mein chadh gaya tha, but aadhe raste mein journey disrupt ho gayi" -> incidentType: "partial_journey", passengerBoarded: true, passengerTravelled: true, journeyCompleted: false, partialJourney: true, disruptionMentioned: "Disrupted midway".
+   - "Meri train late thi lekin maine destination tak travel kiya / safar poora kiya" -> incidentType: "travelled_completed", passengerBoarded: true, passengerTravelled: true, journeyCompleted: true, disruptionMentioned: "Delay during completed journey".
    - "Train miss ho gayi because station pe late pahucha" -> incidentType: "could_not_board", passengerBoarded: false, passengerTravelled: false, disruptionMentioned: "Missed train (passenger reached station late)".
    - "Maine journey complete nahi ki, beech mein problem ho gayi" -> incidentType: "partial_journey", passengerBoarded: true, passengerTravelled: true, journeyCompleted: false, partialJourney: true, disruptionMentioned: "Disrupted midway".
    - "Train cancel ho gayi aur maine travel nahi kiya" -> incidentType: "delay_not_travelled", passengerTravelled: false, cancelledBeforeDeparture: true, disruptionMentioned: "Train cancelled".
 
-2. KEY DISTINCTIONS:
+2. KEY DISTINCTIONS & NO-GUESSING POLICY:
+   - Distinguish completed journey from did-not-travel: If the passenger reached their destination or completed the journey ("reached destination", "safar pura kiya", "made it to my destination"), classify as "travelled_completed" (Scenario E).
+   - Incomplete delay statements: If user only says "train was late" or "train was delayed by 4 hours" without specifying whether they travelled or boarded, NEVER guess Scenario A. Set passengerTravelled: "unknown", passengerBoarded: "unknown", and incidentType: "ambiguous" (Scenario D).
+   - Contradiction detection: If the text contains mutually contradictory assertions (e.g., "I travelled" and "I did not travel"), set incidentType: "ambiguous", and summary: "Contradictory travel evidence detected; clarification required".
    - Distinguish train delay ("train late thi", "train der se aayi") from passenger arriving late ("station pe late pahucha", "traffic mein fas gaya").
    - Distinguish missed train ("train miss ho gayi", "chhut gayi") from cancelled train ("train cancel ho gayi", "radd ho gayi").
-   - Distinguish did-not-travel ("travel nahi kiya", "board nahi kiya") from partial journey ("aadhe raste mein", "beech mein", "journey complete nahi hui").
-   - If travel status is unclear, set passengerTravelled: "unknown" and incidentType: "ambiguous". Never invent missing facts.`;
+   - Distinguish did-not-travel ("travel nahi kiya", "board nahi kiya") from partial journey ("aadhe raste mein", "beech mein", "journey complete nahi hui").`;
 
 interface ReqWithBody extends IncomingMessage {
   body?: unknown;

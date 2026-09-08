@@ -4,42 +4,42 @@ import type { DemoScenario, FollowUpQuestion, MissingFactKey, MultilingualPrompt
 export const DEMO_SCENARIOS: DemoScenario[] = [
   {
     id: "delay-not-travelled",
-    shortLabel: "Train delayed and I did not travel",
+    shortLabel: "Scenario A: Train delayed & did not travel",
     text: "My train was delayed for several hours. I decided not to travel because I would miss an important event.",
   },
   {
     id: "could-not-board",
-    shortLabel: "I could not board the train",
+    shortLabel: "Scenario B: Could not board train",
     text: "I reached the station on time but could not board the train because of a serious disruption on the platform.",
   },
   {
-    id: "travelled-disrupted",
-    shortLabel: "My journey was disrupted",
-    text: "I travelled, but my journey was disrupted midway and the train was terminated early. I am confused about what I can do now.",
-  },
-  {
     id: "partial-journey",
-    shortLabel: "Boarded but disrupted halfway",
+    shortLabel: "Scenario C: Boarded, disrupted halfway",
     text: "I boarded the train but the journey got disrupted halfway.",
   },
   {
+    id: "ambiguous-delayed",
+    shortLabel: "Scenario D: Incomplete input (train delayed)",
+    text: "My train was delayed by 4 hours.",
+  },
+  {
+    id: "travelled-completed",
+    shortLabel: "Scenario E: Travelled & completed despite delay",
+    text: "My train was 5 hours late but I still boarded and made it to my destination fine.",
+  },
+  {
     id: "hinglish-partial-journey",
-    shortLabel: "Train mein chadh gaya tha, aadhe raste me ruka",
+    shortLabel: "Hinglish: Chadh gaya tha, aadhe raste ruka",
     text: "Main train mein chadh gaya tha, lekin aadhe raste mein journey complete nahi hui.",
   },
   {
     id: "partial-route-incomplete",
-    shortLabel: "Travelled part of route, could not complete",
+    shortLabel: "Partial route: Deboarded en route",
     text: "I travelled part of the route but could not complete the journey.",
   },
   {
-    id: "refund-confusion",
-    shortLabel: "I need help understanding a refund situation",
-    text: "I am not sure which refund option applies to my situation. My trip did not go as planned and I still have my ticket.",
-  },
-  {
     id: "ambiguous-situation",
-    shortLabel: "I'm confused about my situation",
+    shortLabel: "Confused / Unclear disruption",
     text: "Something went wrong with my trip. I'm not sure what to do about it. I still have my ticket.",
   },
 ];

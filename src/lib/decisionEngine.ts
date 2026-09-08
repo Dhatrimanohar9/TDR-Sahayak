@@ -95,6 +95,23 @@ function scenarioA(facts: CaseFacts): DecisionResult {
       "Keep any screenshots of delay announcements",
     ],
     deadlineKnown: facts.journeyDateTime !== "",
+    decisionBasis: {
+      keyFact: `Passenger confirmed did not travel, and train was delayed by ${delayText}.`,
+      ruleApplied: "Indian Railways Refund Rule: If a train is delayed >3 hours at origin and passenger does not board, full fare is refundable on TDR before chart preparation / actual train departure without cancellation fees.",
+      counterfactual: "If you had boarded and travelled to your destination despite the delay, standard ticket fare refund would be rejected under completion rules.",
+      whyThisMatters: "Passengers who do not travel due to a delay exceeding 3 hours are entitled to a 100% fare refund without cancellation charges, provided the ticket remains unused and the TDR is filed before chart preparation or actual train departure.",
+      fallbackAction: "If the online portal rejects filing due to chart status, approach the Chief Reservation Supervisor or Station Master to obtain a manual cancellation certificate or file a grievance on RailMadad (139).",
+      officialSourceUrl: "https://www.operations.irctc.co.in/ctrs/ruleRefund.html",
+    },
+    requiredFacts: [
+      "Confirmed non-travel status",
+      "Delay verification (>3 hours for full refund)",
+      "Ticket kept un-boarded / unused",
+    ],
+    optionalFacts: [
+      "PNR / Ticket number",
+      "Cancellation timestamp before train departure",
+    ],
   };
 }
 
@@ -127,6 +144,23 @@ function scenarioB(facts: CaseFacts): DecisionResult {
       "Check if fellow passengers reported the same issue",
     ],
     deadlineKnown: facts.journeyDateTime !== "",
+    decisionBasis: {
+      keyFact: "Passenger was unable to board due to operational service disruption or denied boarding.",
+      ruleApplied: "Indian Railways Refund Rule: Failure to board attributable to railway service failure or station conditions requires contemporaneous certification (Station Master memo or TTE endorsement).",
+      counterfactual: "If the failure to board was due to arriving late after departure through passenger fault, refund is forfeited under standard no-show rules.",
+      whyThisMatters: "Being unable to board due to rail service failure or extreme crowd is an involuntary disruption. Indian Railways requires official station verification (a station master memo) before granting a non-boarding refund.",
+      fallbackAction: "If station staff was unavailable to issue a memo, record date-stamped photos/videos, note fellow passenger PNRs, and register an immediate ticket grievance on RailMadad (railmadad.indianrailways.gov.in or dial 139).",
+      officialSourceUrl: "https://www.operations.irctc.co.in/ctrs/ruleRefund.html",
+    },
+    requiredFacts: [
+      "Documented disruption preventing boarding",
+      "Date of travel and train number",
+      "Passenger non-boarding confirmation",
+    ],
+    optionalFacts: [
+      "Station Master memo or endorsement",
+      "Supporting photo/video or announcements",
+    ],
   };
 }
 
@@ -158,6 +192,23 @@ function scenarioPartialJourney(facts: CaseFacts): DecisionResult {
       "Attach the TTE certificate number in your TDR remarks",
     ],
     deadlineKnown: facts.journeyDateTime !== "",
+    decisionBasis: {
+      keyFact: "Passenger boarded and travelled part of the route, but deboarded en route before the booked destination.",
+      ruleApplied: "Indian Railways Refund Rule: When a journey is truncated midway due to train termination or passenger deboarding, fare for the untravelled segment is refunded upon production of a TTE Deboarding Certificate / EFT.",
+      counterfactual: "If you had stayed on board until the destination, you would be classified under Scenario E (completed journey) where untravelled fare refund does not apply.",
+      whyThisMatters: "When a journey is interrupted or train short-terminated, Indian Railways refunds the proportionate fare for the untravelled segment upon submission of a TTE certificate (Excess Fare Ticket memo).",
+      fallbackAction: "If the TTE did not issue an EFT memo at deboarding, approach the Station Superintendent at the deboarding station to obtain an endorsement within 72 hours.",
+      officialSourceUrl: "https://www.operations.irctc.co.in/ctrs/ruleRefund.html",
+    },
+    requiredFacts: [
+      "Boarding confirmation",
+      "Deboarding station where journey stopped",
+      "TTE deboarding endorsement / EFT memo",
+    ],
+    optionalFacts: [
+      "Disruption cause (derailment, flood, short termination)",
+      "Connecting train details",
+    ],
   };
 }
 
@@ -186,6 +237,20 @@ function scenarioTravelledCompleted(facts: CaseFacts): DecisionResult {
       "Do not file for full refund under delay rules, as completed journeys will be rejected",
     ],
     deadlineKnown: facts.journeyDateTime !== "",
+    decisionBasis: {
+      keyFact: "Passenger boarded the train and travelled to the final booked destination.",
+      ruleApplied: "Indian Railways Refund Rule: Delay on arrival does NOT entitle a passenger to a refund once transportation service has been delivered. Only certified amenity deficiencies (e.g. AC failure, coach downgrade) allow partial fare difference claims.",
+      counterfactual: "If you had opted not to board when the train was delayed >3 hours, you would have qualified under Scenario A for a full refund.",
+      whyThisMatters: "Under Indian Railways rules, arrival delay alone does not qualify for a ticket refund once transportation service is completed to destination. Attempting to file for full delay refund on a completed journey leads to automatic rejection.",
+      fallbackAction: "If you experienced coach amenity failure (like AC failure) or lower-class downgrade during your trip, submit your TTE difference-in-fare certificate to claim partial fare adjustment.",
+      officialSourceUrl: "https://www.operations.irctc.co.in/ctrs/ruleRefund.html",
+    },
+    requiredFacts: [
+      "Completed travel confirmation",
+    ],
+    optionalFacts: [
+      "TTE certificate for AC failure or coach downgrade (if claiming difference of fare)",
+    ],
   };
 }
 
@@ -218,6 +283,23 @@ function scenarioD(facts: CaseFacts): DecisionResult {
       "Come back and answer the remaining questions",
     ],
     deadlineKnown: false,
+    decisionBasis: {
+      keyFact: "Critical travel facts (whether passenger travelled, boarded, or completed journey) remain unconfirmed.",
+      ruleApplied: "Decision Engine Integrity: To prevent erroneous or fraudulent filings, TDR Sahayak never guesses eligibility without confirmed travel and disruption status.",
+      counterfactual: "Once you clarify whether you boarded and travelled, your case will immediately map to Scenario A, B, C, or E.",
+      whyThisMatters: "Filing a claim without confirming whether you boarded or completed your journey risks selecting the wrong TDR code. TDR Sahayak pauses rather than guessing to protect you from an immediate claim rejection.",
+      fallbackAction: "Check your IRCTC booking history or SMS confirmation to verify journey status and train timings before re-submitting.",
+      officialSourceUrl: "https://www.operations.irctc.co.in/ctrs/ruleRefund.html",
+    },
+    requiredFacts: [
+      "Travel status (Did you travel on this ticket?)",
+      "Boarding status (Were you able to board?)",
+      "Disruption description",
+    ],
+    optionalFacts: [
+      "Train number and journey date",
+      "PNR / Booking reference",
+    ],
   };
 }
 

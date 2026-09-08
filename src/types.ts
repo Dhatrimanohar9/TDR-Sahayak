@@ -50,6 +50,10 @@ export interface AnalysisResult {
   /** Which engine produced this result. */
   source: "openai" | "fallback";
   error?: string;
+  /** Meaningful status explaining confidence or what is missing. */
+  statusLabel?: string;
+  /** True when key facts are missing and clarification is required before deciding. */
+  requiresClarification?: boolean;
 }
 
 export type MissingFactKey =
@@ -83,6 +87,15 @@ export type RiskLevel = "low" | "medium" | "high";
 
 export type DecisionScenario = "A" | "B" | "C" | "D" | "E";
 
+export interface DecisionBasis {
+  keyFact: string;
+  ruleApplied: string;
+  counterfactual: string;
+  whyThisMatters?: string;
+  fallbackAction?: string;
+  officialSourceUrl?: string;
+}
+
 export interface DecisionResult {
   scenario: DecisionScenario;
   scenarioTitle: string;
@@ -94,6 +107,9 @@ export interface DecisionResult {
   explanation: string;
   checklist: string[];
   deadlineKnown: boolean;
+  decisionBasis: DecisionBasis;
+  requiredFacts: string[];
+  optionalFacts: string[];
 }
 
 export interface DeadlineAssessment {
@@ -111,6 +127,38 @@ export type CaseStatus =
   | "next_action"
   | "outcome_pending"
   | "resolved";
+
+export type FeedbackOutcome =
+  | "completed"
+  | "need_help"
+  | "could_not_complete"
+  | "different_action"
+  | "other";
+
+export interface OutcomeFeedback {
+  id: string;
+  caseId?: string;
+  scenario: DecisionScenario;
+  scenarioTitle?: string;
+  recommendedAction?: string;
+  selectedOutcome: FeedbackOutcome;
+  outcomeLabel: string;
+  textFeedback?: string;
+  timestamp: string;
+  language?: string;
+  recommendedActionHelpful?: boolean;
+  userCorrectedInitialAnswer?: boolean;
+}
+
+export interface FeedbackStats {
+  total: number;
+  byOutcome: Record<FeedbackOutcome, number>;
+  needHelpCount: number;
+  correctedCount: number;
+  helpfulCount: number;
+  helpfulPct: number;
+  recent: OutcomeFeedback[];
+}
 
 export interface TrackedCase {
   caseId: string;

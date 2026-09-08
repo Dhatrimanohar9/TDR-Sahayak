@@ -427,6 +427,7 @@ export default function App() {
             decision={decision}
             analysis={analysis}
             assessment={deadline}
+            userCorrectedAnswer={Object.keys(answers).length > 0}
             onJourneyDateTimeChange={setJourneyDateTime}
             onPrepareCase={() => setScreen("prepare")}
             onBack={() => setScreen("understanding")}

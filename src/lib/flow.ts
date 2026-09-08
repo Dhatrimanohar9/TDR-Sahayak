@@ -41,11 +41,23 @@ export function buildCaseFacts(
       facts.journeyCompleted = false;
     }
   }
-  if (answers.passengerBoarded !== undefined)
+  if (answers.passengerBoarded !== undefined) {
     facts.passengerBoarded = answers.passengerBoarded === "yes";
+    if (answers.passengerBoarded === "no") {
+      facts.passengerTravelled = false;
+      facts.partialJourney = false;
+      facts.journeyCompleted = false;
+    } else if (facts.passengerTravelled === "unknown") {
+      facts.passengerTravelled = true;
+    }
+  }
   if (answers.journeyCompleted !== undefined) {
     facts.journeyCompleted = answers.journeyCompleted === "yes";
     facts.partialJourney = answers.journeyCompleted === "no";
+    if (facts.journeyCompleted) {
+      facts.passengerBoarded = true;
+      facts.passengerTravelled = true;
+    }
   }
   if (answers.delayDuration)
     facts.delayDuration = answers.delayDuration as CaseFacts["delayDuration"];
