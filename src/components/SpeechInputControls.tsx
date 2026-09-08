@@ -55,12 +55,29 @@ function getSpeechRecognitionConstructor(): SpeechRecognitionConstructor | null 
   return win.SpeechRecognition || win.webkitSpeechRecognition || null;
 }
 
+export type SupportedSpeechLang =
+  | "en-IN"
+  | "hi-IN"
+  | "te-IN"
+  | "ta-IN"
+  | "ml-IN"
+  | "kn-IN";
+
+const SPEECH_LANGUAGES: { code: SupportedSpeechLang; label: string; name: string }[] = [
+  { code: "en-IN", label: "English (IN)", name: "English" },
+  { code: "hi-IN", label: "हिन्दी (Hindi)", name: "Hindi" },
+  { code: "te-IN", label: "తెలుగు (Telugu)", name: "Telugu" },
+  { code: "ta-IN", label: "தமிழ் (Tamil)", name: "Tamil" },
+  { code: "ml-IN", label: "മലയാളം (Malayalam)", name: "Malayalam" },
+  { code: "kn-IN", label: "ಕನ್ನಡ (Kannada)", name: "Kannada" },
+];
+
 export function SpeechInputControls({
   onTranscriptCaptured,
 }: SpeechInputControlsProps) {
   const [isSupported, setIsSupported] = useState<boolean>(false);
   const [isListening, setIsListening] = useState<boolean>(false);
-  const [selectedLang, setSelectedLang] = useState<"en-IN" | "hi-IN">("en-IN");
+  const [selectedLang, setSelectedLang] = useState<SupportedSpeechLang>("en-IN");
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [interimText, setInterimText] = useState<string>("");
@@ -207,33 +224,24 @@ export function SpeechInputControls({
           )}
         </div>
 
-        {/* Language selector */}
-        <div className="flex items-center gap-1 text-xs">
-          <span className="font-semibold text-stone-500">Lang:</span>
-          <button
-            type="button"
-            onClick={() => setSelectedLang("en-IN")}
-            aria-label="Set speech recognition language to English (India)"
-            className={`rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
-              selectedLang === "en-IN"
-                ? "bg-rail-900 text-white"
-                : "bg-white text-stone-700 border border-rail-200 hover:bg-rail-50"
-            }`}
+        {/* Language selector dropdown */}
+        <div className="flex items-center gap-1.5 text-xs">
+          <label htmlFor="speech-lang-select" className="font-bold text-stone-600">
+            Language:
+          </label>
+          <select
+            id="speech-lang-select"
+            value={selectedLang}
+            onChange={(e) => setSelectedLang(e.target.value as SupportedSpeechLang)}
+            disabled={isListening}
+            className="rounded-lg border border-rail-200 bg-white px-2 py-1 text-xs font-bold text-rail-950 shadow-2xs focus:border-rail-600 focus:outline-none disabled:opacity-50"
           >
-            English (IN)
-          </button>
-          <button
-            type="button"
-            onClick={() => setSelectedLang("hi-IN")}
-            aria-label="Set speech recognition language to Hindi (India)"
-            className={`rounded-lg px-2 py-1 text-xs font-bold transition-colors ${
-              selectedLang === "hi-IN"
-                ? "bg-rail-900 text-white"
-                : "bg-white text-stone-700 border border-rail-200 hover:bg-rail-50"
-            }`}
-          >
-            Hindi (IN)
-          </button>
+            {SPEECH_LANGUAGES.map((l) => (
+              <option key={l.code} value={l.code}>
+                {l.label}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -243,7 +251,12 @@ export function SpeechInputControls({
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-xs font-bold text-rail-900">
               <span className="inline-block h-2 w-2 rounded-full bg-red-600 animate-ping" />
-              <span>Listening… Speak clearly in {selectedLang === "en-IN" ? "English / Hinglish" : "Hindi"}.</span>
+              <span>
+                Listening… Speak clearly in{" "}
+                {SPEECH_LANGUAGES.find((l) => l.code === selectedLang)?.name ||
+                  selectedLang}
+                .
+              </span>
             </div>
             {interimText && (
               <p className="text-xs italic text-stone-600 bg-white/70 p-1.5 rounded border border-rail-100">
@@ -266,15 +279,15 @@ export function SpeechInputControls({
         )}
 
         {!isSupported && !errorMessage && (
-          <p className="text-xs text-amber-900 font-medium">
-            ℹ️ Speech recognition is unavailable on this browser or device. You can type your description in the box above.
+          <p className="text-xs text-amber-900 font-medium bg-amber-50 p-2 rounded-lg border border-amber-200">
+            ℹ️ Speech recognition is unavailable on this browser or device (e.g. Firefox or without microphone permission). You can type your description manually in the box above.
           </p>
         )}
       </div>
 
       {/* Mandatory accuracy & device support note */}
-      <p className="mt-2 text-[11px] text-stone-500">
-        Speech recognition depends on browser and device support. If it is unavailable, you can type your description manually. Supported options: English (IN) & Hindi (IN). Recognition accuracy is not guaranteed.
+      <p className="mt-2 text-[11px] text-stone-500 leading-relaxed">
+        Speech recognition relies on browser-supported Web Speech APIs. Not all browsers or devices support every Indian language. Manual typing is always available as a 100% reliable fallback. Transcripts are editable before submission.
       </p>
     </div>
   );

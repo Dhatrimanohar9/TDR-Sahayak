@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { AnalysisResult, DecisionResult, DeadlineAssessment, MissingFactKey, TrackedCase } from "./types";
+import type { AnalysisResult, DecisionResult, DeadlineAssessment, MissingFactKey, TrackedCase, ExtractedDocumentData } from "./types";
 import { analyzeIncident } from "./lib/ai/analyzeIncident";
 import { decide } from "./lib/decisionEngine";
 import { assessDeadline, defaultJourneyDateTime } from "./lib/riskEngine";
@@ -190,7 +190,6 @@ export default function App() {
   const [incidentText, setIncidentText] = useState("");
   const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
   const [answers, setAnswers] = useState<Answers>({});
-  const [editingKey, setEditingKey] = useState<MissingFactKey | null>(null);
   const [journeyDateTime, setJourneyDateTime] = useState(defaultJourneyDateTime());
   const [currentCase, setCurrentCase] = useState<TrackedCase | null>(null);
 
@@ -241,7 +240,6 @@ export default function App() {
     setIncidentText("");
     setAnalysis(null);
     setAnswers({});
-    setEditingKey(null);
     setJourneyDateTime(defaultJourneyDateTime());
     setCurrentCase(null);
     setScreen("welcome");
@@ -279,6 +277,32 @@ export default function App() {
     if (key === "journeyDate") {
       setJourneyDateTime(journeyAnswerToDateTime(value));
     }
+  }
+
+  async function handleDocumentConfirmed(
+    extracted: ExtractedDocumentData,
+    narrative: string,
+  ) {
+    const docAnswers: Answers = {
+      passengerTravelled: extracted.passengerTravelled ? "yes" : "no",
+      passengerBoarded: extracted.passengerTravelled ? "yes" : "no",
+      journeyCompleted: extracted.journeyCompleted ? "yes" : "no",
+      delayDuration: extracted.delayDuration,
+      disruptionType: extracted.disruptionType as Answers["disruptionType"],
+      journeyDate: "past_3d",
+      fromStation: extracted.fromStation,
+      toStation: extracted.toStation,
+      trainNumber: extracted.trainNumber,
+      ticketNumber: extracted.ticketNumber,
+      pnrNumber: extracted.ticketNumber,
+    };
+    if (extracted.journeyDate) {
+      const parsedDate = new Date(extracted.journeyDate);
+      if (!Number.isNaN(parsedDate.getTime())) {
+        setJourneyDateTime(parsedDate.toISOString());
+      }
+    }
+    await startAnalysis(narrative, docAnswers);
   }
 
   return (
@@ -376,6 +400,7 @@ export default function App() {
             onChange={setIncidentText}
             onContinue={() => startAnalysis(incidentText)}
             onBack={() => setScreen("welcome")}
+            onDocumentConfirmed={handleDocumentConfirmed}
           />
         )}
 
@@ -422,10 +447,15 @@ export default function App() {
           <CasePreparation
             facts={facts}
             decision={decision}
-            editingKey={editingKey}
-            onEditKey={setEditingKey}
+            deadline={deadline}
             onAnswerChange={handleAnswer}
-            onCreateClaim={() => setScreen("confirm")}
+            onJourneyDateTimeChange={setJourneyDateTime}
+            onCreateClaim={() => {
+              if (facts && decision && deadline) {
+                setCurrentCase(createCase(facts, decision, deadline));
+                setScreen("success");
+              }
+            }}
             onBack={() => setScreen("decision")}
           />
         )}

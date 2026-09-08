@@ -29,6 +29,11 @@ export interface IncidentFacts {
   cancelledBeforeDeparture: boolean | "unknown";
   disruptionMentioned: string | null;
   journeyDateMentioned: string | null;
+  fromStation?: string | null;
+  toStation?: string | null;
+  trainNumber?: string | null;
+  ticketNumber?: string | null;
+  pnrNumber?: string | null;
 }
 
 /** Output of the AI interpretation layer. */
@@ -122,4 +127,33 @@ export interface DemoScenario {
   id: string;
   shortLabel: string;
   text: string;
+}
+
+export interface ExtractedDocumentData {
+  trainNumber: string;
+  journeyDate: string;
+  fromStation: string;
+  toStation: string;
+  ticketNumber: string;
+  passengerTravelled: boolean;
+  journeyCompleted: boolean;
+  delayDuration: DelayDuration;
+  disruptionType: string;
+  narrativeSummary: string;
+}
+
+export interface SampleDocument {
+  id: string;
+  title: string;
+  subtitle: string;
+  type: "ticket" | "tdr_form" | "certificate";
+  fileName: string;
+  extracted: ExtractedDocumentData;
+}
+
+export interface MultilingualPrompt {
+  lang: string;
+  langCode: "en" | "hi" | "te" | "ta" | "ml" | "kn";
+  label: string;
+  prompt: string;
 }

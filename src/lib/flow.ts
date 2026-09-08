@@ -9,7 +9,13 @@ import { computeMissingFacts } from "./ai/fallbackParser";
 import { defaultJourneyDateTime } from "./riskEngine";
 
 /** Answers collected from follow-up questions, keyed by fact. */
-export type Answers = Partial<Record<MissingFactKey, string>>;
+export type Answers = Partial<Record<MissingFactKey, string>> & {
+  fromStation?: string;
+  toStation?: string;
+  trainNumber?: string;
+  ticketNumber?: string;
+  pnrNumber?: string;
+};
 
 /**
  * Merge AI-extracted facts with the citizen's answers into the final fact
@@ -27,11 +33,17 @@ export function buildCaseFacts(
     journeyDateTime: journeyDateTime || defaultJourneyDateTime(),
   };
 
-  if (answers.passengerTravelled)
+  if (answers.passengerTravelled !== undefined) {
     facts.passengerTravelled = answers.passengerTravelled === "yes";
-  if (answers.passengerBoarded)
+    if (answers.passengerTravelled === "no") {
+      facts.passengerBoarded = false;
+      facts.partialJourney = false;
+      facts.journeyCompleted = false;
+    }
+  }
+  if (answers.passengerBoarded !== undefined)
     facts.passengerBoarded = answers.passengerBoarded === "yes";
-  if (answers.journeyCompleted) {
+  if (answers.journeyCompleted !== undefined) {
     facts.journeyCompleted = answers.journeyCompleted === "yes";
     facts.partialJourney = answers.journeyCompleted === "no";
   }
@@ -46,6 +58,11 @@ export function buildCaseFacts(
           : "unknown";
   if (answers.disruptionType)
     facts.disruptionMentioned = DISRUPTION_LABELS[answers.disruptionType];
+  if (answers.fromStation !== undefined) facts.fromStation = answers.fromStation;
+  if (answers.toStation !== undefined) facts.toStation = answers.toStation;
+  if (answers.trainNumber !== undefined) facts.trainNumber = answers.trainNumber;
+  if (answers.ticketNumber !== undefined) facts.ticketNumber = answers.ticketNumber;
+  if (answers.pnrNumber !== undefined) facts.pnrNumber = answers.pnrNumber;
 
   facts.incidentType = refineIncidentType(facts);
   return facts;
@@ -56,34 +73,44 @@ export function buildCaseFacts(
  * classification may change (e.g. "ambiguous" becomes concrete).
  */
 export function refineIncidentType(f: IncidentFacts): IncidentFacts["incidentType"] {
-  // Check completed vs partial journey first
+  // If passenger explicitly did not travel, they cannot have completed or had a partial journey
+  if (f.passengerTravelled === false) {
+    if (
+      f.disruptionMentioned === "Could not board" ||
+      f.incidentType === "could_not_board"
+    ) {
+      return "could_not_board";
+    }
+    return "delay_not_travelled";
+  }
+
+  // Check completed vs partial journey for passengers who travelled
   if (f.journeyCompleted === true) {
     return "travelled_completed";
   }
-  if (f.partialJourney === true || (f.passengerBoarded === true && f.journeyCompleted === false)) {
+  if (
+    f.partialJourney === true ||
+    (f.passengerBoarded === true && f.journeyCompleted === false)
+  ) {
     return "partial_journey";
   }
   if (f.passengerTravelled === true || f.passengerBoarded === true) {
     if (f.journeyCompleted === false) return "partial_journey";
-    return f.incidentType === "partial_journey" ? "partial_journey" : "travelled_disrupted";
+    return f.incidentType === "partial_journey"
+      ? "partial_journey"
+      : "travelled_disrupted";
   }
   if (f.passengerBoarded === false) {
-    if (f.disruptionMentioned === "Could not board" || f.incidentType === "could_not_board") {
+    if (
+      f.disruptionMentioned === "Could not board" ||
+      f.incidentType === "could_not_board"
+    ) {
       return "could_not_board";
     }
     if (f.delayDuration === "gt6h" || f.delayDuration === "3to6h") {
       return "delay_not_travelled";
     }
     return "could_not_board";
-  }
-  if (f.passengerTravelled === false) {
-    if (f.disruptionMentioned === "Could not board" || f.incidentType === "could_not_board") {
-      return "could_not_board";
-    }
-    if (f.delayDuration === "gt6h" || f.delayDuration === "3to6h") {
-      return "delay_not_travelled";
-    }
-    return "delay_not_travelled";
   }
   return f.incidentType === "ambiguous" ? "ambiguous" : f.incidentType;
 }

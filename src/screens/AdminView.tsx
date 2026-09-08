@@ -152,10 +152,10 @@ export function AdminView({
           </span>
           <div>
             <p className="text-xs font-bold text-amber-950 uppercase tracking-wide">
-              Admin Demonstration Only
+              Demonstration only · Synthetic data · Future concept
             </p>
             <p className="mt-0.5 text-xs text-amber-900 leading-relaxed font-medium">
-              Synthetic data · No real passenger records are included.
+              Simulated administrative view for prototype evaluation only. Does not collect real passenger data or connect to Indian Railways systems.
             </p>
           </div>
         </div>

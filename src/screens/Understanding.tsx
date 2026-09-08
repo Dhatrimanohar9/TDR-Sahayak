@@ -136,60 +136,71 @@ export function Understanding({
       />
       <StepProgress step={showCorrection || lastChange !== null ? 3 : 2} />
 
-      {/* Before vs After Compact Rule Comparison Card */}
+      {/* Before vs After Hero Rule Comparison Card */}
       {lastChange && (
-        <div className="mt-4 rounded-2xl border-2 border-amber-300 bg-amber-50/95 p-4 shadow-md animate-fade-up">
-          <div className="flex items-center justify-between border-b border-amber-200/80 pb-2 mb-3">
+        <div className="mt-4 rounded-2xl border-2 border-amber-400 bg-amber-50/95 p-4 shadow-lg animate-fade-up">
+          <div className="flex items-center justify-between border-b border-amber-300 pb-2 mb-3">
             <div className="flex items-center gap-2">
-              <span className="relative flex h-2.5 w-2.5">
+              <span className="relative flex h-3 w-3">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-700"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-700"></span>
               </span>
               <span className="text-xs font-black uppercase tracking-wider text-amber-950">
-                Correction Applied: {lastChange.factName}
+                Hero Correction Applied: {lastChange.factName}
               </span>
             </div>
-            <button
-              onClick={() => setLastChange(null)}
-              className="text-stone-400 hover:text-stone-700 text-xs font-bold px-1"
-            >
-              ✕
-            </button>
+            <div className="flex items-center gap-2">
+              {lastChange.beforeScenarioCode !== currentDec.scenario && (
+                <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-black text-amber-950 border border-amber-400">
+                  Scenario {lastChange.beforeScenarioCode} → {currentDec.scenario}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setLastChange(null)}
+                className="text-stone-400 hover:text-stone-700 text-xs font-bold px-1"
+                aria-label="Dismiss correction comparison"
+              >
+                ✕
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* BEFORE CORRECTION */}
-            <div className="rounded-xl border border-stone-200 bg-white p-3 text-xs shadow-2xs">
-              <p className="text-[10px] font-bold text-stone-500 uppercase tracking-wide mb-1">
-                BEFORE CORRECTION
+            <div className="rounded-xl border border-stone-300 bg-white p-3 text-xs shadow-2xs">
+              <p className="text-[10px] font-black text-stone-500 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>BEFORE CORRECTION</span>
+                <span className="rounded bg-stone-100 px-1.5 py-0.5 text-[9px] font-bold text-stone-700">Scenario {lastChange.beforeScenarioCode}</span>
               </p>
-              <div className="space-y-0.5 text-stone-700">
-                <p>• Travelled: <strong className="text-stone-900">{lastChange.beforeTravelled}</strong></p>
-                <p>• Journey completed: <strong className="text-stone-900">{lastChange.beforeCompleted}</strong></p>
-                <p className="mt-1 font-semibold text-rail-900">
-                  Recommendation: Scenario {lastChange.beforeScenarioCode} ({lastChange.beforeScenarioTitle})
+              <div className="space-y-1 text-stone-700">
+                <p>• Travelled: <strong className="text-stone-950">{lastChange.beforeTravelled}</strong></p>
+                <p>• Journey completed: <strong className="text-stone-950">{lastChange.beforeCompleted}</strong></p>
+                <p className="mt-1.5 font-bold text-rail-950 border-t border-stone-100 pt-1 leading-snug">
+                  {lastChange.beforeScenarioTitle}
                 </p>
               </div>
             </div>
 
             {/* AFTER CORRECTION */}
-            <div className="rounded-xl border border-rail-800 bg-rail-900 text-white p-3 text-xs shadow-2xs">
-              <p className="text-[10px] font-bold text-amber-signal uppercase tracking-wide mb-1">
-                AFTER CORRECTION
+            <div className="rounded-xl border-2 border-rail-800 bg-rail-900 text-white p-3 text-xs shadow-md">
+              <p className="text-[10px] font-black text-amber-signal uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>AFTER CORRECTION</span>
+                <span className="rounded bg-white/20 px-1.5 py-0.5 text-[9px] font-bold text-amber-signal">Scenario {currentDec.scenario}</span>
               </p>
-              <div className="space-y-0.5 text-rail-100">
+              <div className="space-y-1 text-rail-100">
                 <p>• Travelled: <strong className="text-white">{facts.passengerTravelled === true ? "Yes" : facts.passengerTravelled === false ? "No" : "Unconfirmed"}</strong></p>
                 <p>• Journey completed: <strong className="text-white">{facts.passengerTravelled === false ? "Not applicable" : facts.journeyCompleted === true ? "Yes" : facts.journeyCompleted === false ? "No" : "Unconfirmed"}</strong></p>
-                <p className="mt-1 font-bold text-amber-signal">
-                  Recommendation: Scenario {currentDec.scenario} ({currentDec.scenarioTitle})
+                <p className="mt-1.5 font-bold text-amber-signal border-t border-white/15 pt-1 leading-snug">
+                  {currentDec.scenarioTitle}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="mt-3 rounded-lg bg-amber-100/80 px-3 py-2 text-xs font-extrabold text-amber-950 flex items-center gap-1.5 border border-amber-200">
-            <span>⚖️</span>
-            <span>
+          <div className="mt-3 rounded-xl bg-amber-100/90 px-3.5 py-2.5 text-xs font-black text-amber-950 flex items-center gap-2 border border-amber-300 shadow-2xs">
+            <span className="text-base">⚖️</span>
+            <span className="leading-snug">
               The recommendation changed because you corrected {lastChange.factKey === "passengerTravelled" ? "whether you travelled" : `your ${lastChange.factName.toLowerCase()}`}.
             </span>
           </div>
@@ -364,12 +375,23 @@ export function Understanding({
       {showCorrection && (
         <Card className="mt-3 animate-fade-up border-amber-200 bg-amber-50/40">
           <div className="mb-3">
-            <h3 className="text-sm font-bold text-rail-950">
-              Correct important facts before deciding
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-rail-950">
+                Correct important facts before deciding
+              </h3>
+              <span className="rounded-full bg-amber-soft px-2 py-0.5 text-[10px] font-bold text-amber-900 border border-amber-300">
+                AI interprets · Passenger corrects · Rules decide
+              </span>
+            </div>
             <p className="mt-0.5 text-xs text-stone-600">
               Tap any option to immediately update how the rule engine evaluates your claim.
             </p>
+            <div className="mt-2 rounded-lg bg-amber-100/90 p-2.5 text-[11px] font-extrabold text-amber-950 border border-amber-300 flex items-center gap-2 shadow-2xs">
+              <span className="text-sm">⚡</span>
+              <span>
+                <strong>Demo Shortcut:</strong> Tap <em>“No, did not travel”</em> below to see the recommendation switch from <strong>Scenario C</strong> (Partial Journey) to <strong>Scenario A</strong> (Delayed Train) in real time.
+              </span>
+            </div>
           </div>
 
           {/* Live Recalculation Summary Box */}

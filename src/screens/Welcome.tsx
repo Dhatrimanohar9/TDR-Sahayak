@@ -46,16 +46,16 @@ export function Welcome({
             Turn your railway disruption story into a clear next step.
           </p>
           <p className="mt-3 text-xs leading-relaxed text-rail-100/90 sm:text-sm">
-            Describe what happened, check what we understood, correct anything that is wrong, and see why a particular next step was recommended.
+            Describe what happened in everyday language, check what we understood, correct anything that is wrong, and see why a particular next step was recommended.
           </p>
 
-          {/* Distinctiveness Principle Box */}
+          {/* Core Principle Callout */}
           <div className="mt-4 rounded-2xl bg-white/10 p-3.5 border border-white/15 backdrop-blur-sm text-xs">
             <div className="flex items-center gap-2 font-black text-amber-signal tracking-wide uppercase text-[11px] mb-1">
               <span>⚡ AI interprets · Passenger corrects · Rules decide</span>
             </div>
             <p className="text-rail-100 leading-relaxed text-[11px]">
-              A wrong interpretation can lead to a wrong next step. TDR Sahayak lets the passenger correct important facts before acting.
+              A wrong AI interpretation can lead to an incorrect railway claim. TDR Sahayak puts the passenger in control to correct facts before deterministic rules evaluate the outcome.
             </p>
           </div>
 
@@ -66,11 +66,14 @@ export function Welcome({
                 <span className="font-bold text-amber-signal uppercase tracking-wider text-[10px]">
                   ⚡ Recommended Demo Shortcut
                 </span>
-                <span className="text-[10px] text-rail-100">Scenario C · Partial Journey</span>
+                <span className="text-[10px] text-rail-100 font-medium">
+                  Partial Journey · 1-Tap Rehearsal
+                </span>
               </div>
               <button
+                type="button"
                 onClick={() => onRunDemo("partial-journey")}
-                className="w-full flex items-center justify-between rounded-xl bg-amber-signal px-3.5 py-2 text-left text-xs font-extrabold text-rail-950 shadow-md transition-all hover:bg-amber-400 active:scale-[0.99]"
+                className="w-full flex items-center justify-between rounded-xl bg-amber-signal px-3.5 py-2.5 text-left text-xs font-black text-rail-950 shadow-md transition-all hover:bg-amber-400 active:scale-[0.99]"
               >
                 <span>Try the partial-journey example (Hyderabad → Vijayawada)</span>
                 <span aria-hidden className="text-sm font-bold ml-2 shrink-0">→</span>
@@ -87,6 +90,7 @@ export function Welcome({
 
         {caseCount > 0 && (
           <button
+            type="button"
             onClick={onTrack}
             className="flex w-full items-center justify-between rounded-2xl border-2 border-rail-200 bg-white px-4 py-3.5 text-left shadow-sm transition-all hover:border-rail-600 hover:bg-rail-50/50"
           >
@@ -109,35 +113,44 @@ export function Welcome({
           </button>
         )}
 
-        {/* 4 Feature Pillars */}
+        {/* 4 Feature Pillars: Describe -> Check -> Correct -> Next Step */}
         <Card className="border-rail-100">
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-rail-800">
-            How TDR Sahayak Protects Your Refund
-          </h2>
-          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-xs font-extrabold uppercase tracking-wider text-rail-800">
+              The 4-Stage Citizen Journey
+            </h2>
+            <span className="text-[10px] font-bold text-stone-500 uppercase">
+              How it works
+            </span>
+          </div>
+
+          <div className="grid gap-2.5 sm:grid-cols-2">
             {[
               {
                 num: "1",
-                title: "Plain-English Story",
-                body: "Speak or type what happened in English or Hindi. Dictation support included.",
+                title: "Describe",
+                body: "Type, speak in 6 Indian languages, or upload a ticket/TDR photo.",
               },
               {
                 num: "2",
-                title: "Fact Review & Correction",
-                body: "Review extracted journey facts and correct any details before rule check.",
+                title: "Check",
+                body: "System extracts structured facts: delays, boarding status, and route completion.",
               },
               {
                 num: "3",
-                title: "Deterministic Rule Engine",
-                body: "Produced by explicit decision rules based on confirmed passenger facts.",
+                title: "Correct",
+                body: "Passenger reviews and adjusts facts before any recommendation is made.",
               },
               {
                 num: "4",
-                title: "Actionable Guidance",
-                body: "Clear next steps, statutory claim deadlines, and required document checklist.",
+                title: "Next Step",
+                body: "Deterministic rules provide an actionable checklist and statutory claim window.",
               },
             ].map((p) => (
-              <div key={p.num} className="flex items-start gap-2.5 rounded-xl bg-rail-50/60 p-3 border border-rail-100/80">
+              <div
+                key={p.num}
+                className="flex items-start gap-2.5 rounded-xl bg-rail-50/60 p-3 border border-rail-100/80"
+              >
                 <span
                   aria-hidden
                   className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-rail-900 text-xs font-bold text-amber-signal"
@@ -146,36 +159,41 @@ export function Welcome({
                 </span>
                 <div>
                   <h3 className="text-xs font-bold text-rail-950">{p.title}</h3>
-                  <p className="mt-0.5 text-[11px] leading-relaxed text-stone-600">{p.body}</p>
+                  <p className="mt-0.5 text-[11px] leading-relaxed text-stone-600">
+                    {p.body}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
         </Card>
 
-        {/* Footer Navigation Bar */}
+        {/* Footer Navigation Bar - Clearly Secondary & Labelled Demonstration Only */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
           <Badge tone="amber">Civic Tech Prototype · Offline Safe</Badge>
           <div className="flex flex-wrap items-center gap-1.5">
             {onAdmin && (
               <button
+                type="button"
                 onClick={onAdmin}
-                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-rail-800 bg-rail-100/60 hover:bg-rail-200/70 transition-colors"
+                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
               >
-                📊 Support Admin
+                🛠️ Admin View <span className="text-[10px] text-stone-400">(Demo)</span>
               </button>
             )}
             <button
+              type="button"
               onClick={onInsights}
-              className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-rail-800 bg-rail-100/60 hover:bg-rail-200/70 transition-colors"
+              className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
             >
-              🚀 Insights & Architecture
+              📊 Insights <span className="text-[10px] text-stone-400">(Synthetic)</span>
             </button>
             <button
+              type="button"
               onClick={onAbout}
               className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-stone-600 hover:text-rail-950 underline underline-offset-4"
             >
-              How it works
+              About
             </button>
           </div>
         </div>
