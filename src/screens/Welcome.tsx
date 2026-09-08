@@ -6,6 +6,8 @@ export function Welcome({
   onAbout,
   onInsights,
   onAdmin,
+  onValidationStudy,
+  onValidationReport,
   caseCount,
   onTrack,
 }: {
@@ -14,6 +16,8 @@ export function Welcome({
   onAbout: () => void;
   onInsights: () => void;
   onAdmin?: () => void;
+  onValidationStudy?: () => void;
+  onValidationReport?: () => void;
   caseCount: number;
   onTrack: () => void;
 }) {
@@ -113,6 +117,39 @@ export function Welcome({
           </button>
         )}
 
+        {/* Research Study / Judge Validation Banner */}
+        <div className="rounded-2xl border-2 border-emerald-300 bg-emerald-50/70 p-3.5 shadow-xs">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 text-xs font-bold text-emerald-950 uppercase tracking-wide">
+              <span>🔬</span> Usability Study & Validation
+            </span>
+            <Badge tone="green">Empirical Testing</Badge>
+          </div>
+          <p className="mt-1 text-xs text-emerald-900/90 leading-relaxed">
+            Participate in structured before-and-after testing or view the live judge-facing accuracy report.
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            {onValidationStudy && (
+              <button
+                type="button"
+                onClick={onValidationStudy}
+                className="flex-1 rounded-xl bg-emerald-700 px-3 py-2 text-center text-xs font-bold text-white hover:bg-emerald-800 transition-colors shadow-2xs"
+              >
+                🧪 Take Usability Test
+              </button>
+            )}
+            {onValidationReport && (
+              <button
+                type="button"
+                onClick={onValidationReport}
+                className="flex-1 rounded-xl bg-white px-3 py-2 text-center text-xs font-bold text-rail-950 border border-emerald-300 hover:bg-emerald-100 transition-colors shadow-2xs"
+              >
+                📋 View Validation Report
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* 4 Feature Pillars: Describe -> Check -> Correct -> Next Step */}
         <Card className="border-rail-100">
           <div className="flex items-center justify-between mb-2">
@@ -179,6 +216,15 @@ export function Welcome({
                 className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-stone-600 bg-stone-100 hover:bg-stone-200 transition-colors"
               >
                 🛠️ Admin View <span className="text-[10px] text-stone-400">(Demo)</span>
+              </button>
+            )}
+            {onValidationReport && (
+              <button
+                type="button"
+                onClick={onValidationReport}
+                className="rounded-lg px-2.5 py-1.5 text-xs font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 transition-colors border border-emerald-300"
+              >
+                📋 Judge Report
               </button>
             )}
             <button

@@ -89,9 +89,11 @@ const SYNTHETIC_ADMIN_CASES: AdminCaseRecord[] = [
 export function AdminView({
   onCitizenView,
   onInsightsView,
+  onValidationReport,
 }: {
   onCitizenView: () => void;
   onInsightsView: () => void;
+  onValidationReport?: () => void;
 }) {
   const [filterScenario, setFilterScenario] = useState<string>("all");
   const [filterClarification, setFilterClarification] = useState<string>("all");
@@ -138,6 +140,15 @@ export function AdminView({
           >
             📊 Prototype Insights
           </button>
+          {onValidationReport && (
+            <button
+              type="button"
+              onClick={onValidationReport}
+              className="rounded-lg px-2.5 py-1.5 font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 transition-colors border border-emerald-300"
+            >
+              📋 Judge Report
+            </button>
+          )}
         </div>
       </div>
 

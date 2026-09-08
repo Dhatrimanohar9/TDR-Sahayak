@@ -205,3 +205,67 @@ export interface MultilingualPrompt {
   label: string;
   prompt: string;
 }
+
+/** Structured usability test task for the 5 canonical scenarios. */
+export interface StudyScenarioTask {
+  id: string;
+  scenarioCode: DecisionScenario;
+  scenarioTitle: string;
+  narrativePrompt: string;
+  preQuestion: string;
+  options: { id: string; text: string; isCorrect: boolean }[];
+  correctActionId: string;
+  explanationSummary: string;
+}
+
+/** Individual usability study participant test response (Zero PII). */
+export interface ValidationStudyRecord {
+  id: string;
+  participantCode: string; // Anonymous ID, e.g. "P-01"
+  scenarioId: string;
+  scenarioCode: DecisionScenario;
+  language: string;
+  preAnswerId: string;
+  preAnswerCorrect: boolean;
+  postAnswerId: string;
+  postAnswerCorrect: boolean;
+  taskTimeSeconds: number;
+  confidenceBefore: number; // 1 to 5
+  confidenceAfter: number; // 1 to 5
+  explanationUnderstood: boolean;
+  documentsUnderstood: boolean;
+  clarificationUnderstood: boolean;
+  comment?: string;
+  timestamp: string;
+  isDemoSeeded?: boolean;
+}
+
+/** Aggregated validation metrics computed strictly from collected responses. */
+export interface ValidationMetrics {
+  totalParticipants: number;
+  totalTrials: number;
+  languages: string[];
+  scenariosTested: string[];
+  preCorrectCount: number;
+  preCorrectPct: number;
+  postCorrectCount: number;
+  postCorrectPct: number;
+  improvementPercentagePoints: number;
+  avgTaskTimeSeconds: number;
+  avgConfidenceBefore: number;
+  avgConfidenceAfter: number;
+  explanationComprehensionPct: number;
+  clarificationUnderstandingPct: number;
+  documentsUnderstoodPct: number;
+  records: ValidationStudyRecord[];
+}
+
+/** Engineering iteration tracking item: Finding → Product Change → Retest Status. */
+export interface FeedbackImprovementItem {
+  id: string;
+  finding: string;
+  source: string;
+  productChange: string;
+  retestStatus: "retested_validated" | "pending_retest" | "in_observation";
+  retestNotes: string;
+}

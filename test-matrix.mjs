@@ -4,6 +4,16 @@ import { decide } from "./src/lib/decisionEngine";
 import { buildCaseFacts } from "./src/lib/flow";
 import { DEMO_SCENARIOS, MULTILINGUAL_PROMPTS, SAMPLE_DOCUMENTS } from "./src/data/scenarios";
 import { saveFeedback, getFeedbackStats, clearFeedback } from "./src/lib/feedbackStore";
+import {
+  STUDY_SCENARIO_TASKS,
+  saveStudyRecord,
+  getValidationMetrics,
+  clearAllStudyData,
+  clearRealStudyData,
+  seedShowcaseStudyData,
+  FEEDBACK_IMPROVEMENTS,
+  generateSubmissionSummary,
+} from "./src/lib/validationStore";
 
 if (typeof globalThis.localStorage === "undefined") {
   const store = new Map();
@@ -238,8 +248,133 @@ if (
   allPassed = false;
 }
 
+// 10. Test Usability Study Scenario Tasks Configuration
+console.log("\n[10] Testing Usability Study Tasks (5 Canonical Scenarios)...");
+if (STUDY_SCENARIO_TASKS.length !== 5) {
+  console.error("FAIL: Expected 5 study tasks, found:", STUDY_SCENARIO_TASKS.length);
+  allPassed = false;
+}
+
+const scenarioCodes = STUDY_SCENARIO_TASKS.map((t) => t.scenarioCode);
+console.log(`✓ Usability Tasks Configured: ${scenarioCodes.join(", ")}`);
+for (const task of STUDY_SCENARIO_TASKS) {
+  const correctOpt = task.options.find((o) => o.isCorrect);
+  if (!correctOpt || correctOpt.id !== task.correctActionId) {
+    console.error(`FAIL: Option integrity error in study task ${task.id}`);
+    allPassed = false;
+  }
+}
+
+// 11. Test Empty-State & Zero-Fabrication Metrics Handling
+console.log("\n[11] Testing Zero-Fabrication Empty-State Metrics Handling...");
+clearAllStudyData();
+const emptyMetrics = getValidationMetrics(false);
+console.log(`✓ Empty State Metrics -> Trials: ${emptyMetrics.totalTrials} | Pre: ${emptyMetrics.preCorrectPct}% | Post: ${emptyMetrics.postCorrectPct}% | Improvement: ${emptyMetrics.improvementPercentagePoints}%`);
+
+if (
+  emptyMetrics.totalTrials !== 0 ||
+  emptyMetrics.totalParticipants !== 0 ||
+  emptyMetrics.preCorrectPct !== 0 ||
+  emptyMetrics.postCorrectPct !== 0 ||
+  emptyMetrics.improvementPercentagePoints !== 0 ||
+  emptyMetrics.records.length !== 0
+) {
+  console.error("FAIL: Empty-state metrics returned non-zero or fabricated values!");
+  allPassed = false;
+}
+
+const emptySummary = generateSubmissionSummary(false);
+if (!emptySummary.includes("Ready for Field Testing") || !emptySummary.includes("Zero Fabrication")) {
+  console.error("FAIL: Empty summary missing zero-fabrication notice!");
+  allPassed = false;
+}
+
+// 12. Test Empirical Usability Trial Recording & Delta Computation
+console.log("\n[12] Testing Usability Trial Recording & Accuracy Improvement Computation...");
+saveStudyRecord({
+  participantCode: "P-TEST-01",
+  scenarioId: "task-delayed-unused",
+  scenarioCode: "A",
+  language: "English",
+  preAnswerId: "opt-a1", // incorrect
+  preAnswerCorrect: false,
+  postAnswerId: "opt-a2", // correct
+  postAnswerCorrect: true,
+  taskTimeSeconds: 40,
+  confidenceBefore: 2,
+  confidenceAfter: 5,
+  explanationUnderstood: true,
+  documentsUnderstood: true,
+  clarificationUnderstood: true,
+  comment: "Filing TDR was clearly explained.",
+  isDemoSeeded: false,
+});
+
+saveStudyRecord({
+  participantCode: "P-TEST-02",
+  scenarioId: "task-delayed-completed",
+  scenarioCode: "E",
+  language: "Hindi",
+  preAnswerId: "opt-e1", // incorrect
+  preAnswerCorrect: false,
+  postAnswerId: "opt-e2", // correct
+  postAnswerCorrect: true,
+  taskTimeSeconds: 30,
+  confidenceBefore: 3,
+  confidenceAfter: 5,
+  explanationUnderstood: true,
+  documentsUnderstood: true,
+  clarificationUnderstood: true,
+  comment: "Counterfactual was very clear.",
+  isDemoSeeded: false,
+});
+
+const activeMetrics = getValidationMetrics(false);
+console.log(`✓ Active Real Metrics -> Participants: ${activeMetrics.totalParticipants} | Pre: ${activeMetrics.preCorrectPct}% | Post: ${activeMetrics.postCorrectPct}% | Gain: +${activeMetrics.improvementPercentagePoints}% pts | Mean Time: ${activeMetrics.avgTaskTimeSeconds}s`);
+
+if (
+  activeMetrics.totalTrials !== 2 ||
+  activeMetrics.totalParticipants !== 2 ||
+  activeMetrics.preCorrectPct !== 0 ||
+  activeMetrics.postCorrectPct !== 100 ||
+  activeMetrics.improvementPercentagePoints !== 100 ||
+  activeMetrics.avgTaskTimeSeconds !== 35 ||
+  activeMetrics.avgConfidenceBefore !== 2.5 ||
+  activeMetrics.avgConfidenceAfter !== 5
+) {
+  console.error("FAIL: Usability study metrics calculation mismatch!", activeMetrics);
+  allPassed = false;
+}
+
+// 13. Test Data Separation & Feedback-to-Improvement Tracking Table
+console.log("\n[13] Testing Data Separation & Feedback-to-Improvement Tracking...");
+clearRealStudyData();
+const afterClearReal = getValidationMetrics(false);
+if (afterClearReal.totalTrials !== 0) {
+  console.error("FAIL: Clear real study data failed!");
+  allPassed = false;
+}
+
+// Seed showcase data and verify it is explicitly tagged
+seedShowcaseStudyData();
+const demoMetrics = getValidationMetrics(true);
+console.log(`✓ Showcase Demo Metrics -> Total Trials: ${demoMetrics.totalTrials} | Improvement: +${demoMetrics.improvementPercentagePoints}% pts`);
+
+if (demoMetrics.totalTrials !== 8 || !demoMetrics.records.every((r) => r.isDemoSeeded)) {
+  console.error("FAIL: Showcase demo data tag or trial count mismatch!");
+  allPassed = false;
+}
+
+// Check Feedback improvements table
+if (FEEDBACK_IMPROVEMENTS.length < 5) {
+  console.error("FAIL: Insufficient feedback improvements logged!");
+  allPassed = false;
+} else {
+  console.log(`✓ Feedback-to-Improvement Items Documented: ${FEEDBACK_IMPROVEMENTS.length} engineering iterations`);
+}
+
 console.log("\n==================================================");
-console.log(allPassed ? "ALL VERIFICATION CHECKS PASSED SUCCESSFULLY!" : "SOME CHECKS FAILED!");
+console.log(allPassed ? "ALL 13 VERIFICATION CHECKS PASSED SUCCESSFULLY!" : "SOME CHECKS FAILED!");
 console.log("==================================================");
 
 if (!allPassed) process.exit(1);

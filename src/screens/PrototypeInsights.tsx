@@ -75,9 +75,11 @@ const OUTCOME_NAMES: Record<FeedbackOutcome, string> = {
 export function PrototypeInsights({
   onBack,
   onAdmin,
+  onValidationReport,
 }: {
   onBack: () => void;
   onAdmin?: () => void;
+  onValidationReport?: () => void;
 }) {
   const [feedbackStats, setFeedbackStats] = useState<FeedbackStats>(() => {
     seedSampleFeedbackIfEmpty();
@@ -140,6 +142,15 @@ export function PrototypeInsights({
             >
               📊 Prototype Insights (Active)
             </button>
+            {onValidationReport && (
+              <button
+                type="button"
+                onClick={onValidationReport}
+                className="rounded-lg px-2.5 py-1.5 font-bold text-emerald-900 bg-emerald-100 hover:bg-emerald-200 transition-colors border border-emerald-300"
+              >
+                📋 Judge Report
+              </button>
+            )}
           </div>
         </div>
       )}

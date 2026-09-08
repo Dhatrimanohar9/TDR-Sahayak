@@ -17,6 +17,8 @@ import { CaseTracker } from "./screens/CaseTracker";
 import { AboutSheet } from "./screens/AboutSheet";
 import { PrototypeInsights } from "./screens/PrototypeInsights";
 import { AdminView } from "./screens/AdminView";
+import { ValidationStudyScreen } from "./screens/ValidationStudyScreen";
+import { ValidationReportScreen } from "./screens/ValidationReportScreen";
 
 type Screen =
   | "welcome"
@@ -30,7 +32,9 @@ type Screen =
   | "success"
   | "tracker"
   | "insights"
-  | "admin";
+  | "admin"
+  | "study"
+  | "validation";
 
 /** Sensible pre-answered facts for the one-tap demo journeys. */
 const DEMO_AUTO_ANSWERS: Record<string, Answers> = {
@@ -129,6 +133,8 @@ export default function App() {
     "success",
     "insights",
     "admin",
+    "study",
+    "validation",
   ];
 
   const setScreen = useCallback((next: Screen) => {
@@ -149,6 +155,14 @@ export default function App() {
         setScreenRaw("admin");
         return;
       }
+      if (path === "validation" || path === "report") {
+        setScreenRaw("validation");
+        return;
+      }
+      if (path === "study") {
+        setScreenRaw("study");
+        return;
+      }
       const hash = window.location.hash.replace(/^#\/?/, "");
       const validScreens: Screen[] = [
         "welcome",
@@ -160,6 +174,8 @@ export default function App() {
         "tracker",
         "insights",
         "admin",
+        "study",
+        "validation",
       ];
       if (validScreens.includes(hash as Screen)) {
         setScreenRaw(hash as Screen);
@@ -331,6 +347,13 @@ export default function App() {
           </span>
         </button>
         <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => setScreen("validation")}
+            className="flex min-h-[40px] items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-950 hover:bg-emerald-100 transition-colors shadow-2xs"
+          >
+            <span>📋</span>
+            <span>Judge Report</span>
+          </button>
           <div className="relative">
             <button
               onClick={() => setDemoOpen((o) => !o)}
@@ -383,6 +406,8 @@ export default function App() {
             onAbout={() => setAboutOpen(true)}
             onInsights={() => setScreen("insights")}
             onAdmin={() => setScreen("admin")}
+            onValidationStudy={() => setScreen("study")}
+            onValidationReport={() => setScreen("validation")}
             caseCount={trackedCases.length}
             onTrack={() => {
               const latest = trackedCases[0];
@@ -496,6 +521,7 @@ export default function App() {
           <PrototypeInsights
             onBack={() => setScreen("welcome")}
             onAdmin={() => setScreen("admin")}
+            onValidationReport={() => setScreen("validation")}
           />
         )}
 
@@ -503,6 +529,27 @@ export default function App() {
           <AdminView
             onCitizenView={() => setScreen("welcome")}
             onInsightsView={() => setScreen("insights")}
+            onValidationReport={() => setScreen("validation")}
+          />
+        )}
+
+        {screen === "study" && (
+          <ValidationStudyScreen
+            onRunScenarioInApp={(promptText) => {
+              setAnswers({});
+              startAnalysis(promptText);
+            }}
+            onViewReport={() => setScreen("validation")}
+            onBack={() => setScreen("welcome")}
+          />
+        )}
+
+        {screen === "validation" && (
+          <ValidationReportScreen
+            onStartStudy={() => setScreen("study")}
+            onBack={() => setScreen("welcome")}
+            onAdmin={() => setScreen("admin")}
+            onInsights={() => setScreen("insights")}
           />
         )}
       </main>
